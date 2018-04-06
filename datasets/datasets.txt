@@ -1,0 +1,5 @@
+You can download the BirdCLEF training and test data via https://www.crowdai.org. 
+
+You need to register for the challenges to access the data.
+
+After download, you need to unpack the archive and change the path to the resulting directory containing "wav" and "xml" folders in the config.py script.
