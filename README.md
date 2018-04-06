@@ -23,6 +23,11 @@ cd BirdCLEF-Baseline
 sudo pip install –r requirements.txt
 ```
 
+## Dataset
+You can download the BirdCLEF training and test data via https://www.crowdai.org. 
+
+You need to register for the challenges to access the data. After download, you need to unpack the archive and change the path to the resulting directory containing "wav" and "xml" folders in the `config.py` script.
+
 ## Workflow
 
 Our workflow consists of four main phases: First, we need to <b>sort the BirdCLEF training data</b>. Secondly, we <b>extract spectrograms</b> from audio recordings. Thirdly, we <b>train a deep neural net</b> based on the resulting spectrograms - we treat the audio classification task as an image processing problem. Finally, we <b>test the trained net</b> given a local validation set of unseen audio recordings.
