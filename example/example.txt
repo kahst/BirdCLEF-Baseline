@@ -1,0 +1,1 @@
+You can use this sample image and recording to test some of the scripts, e.g. image augmentation or spectrogram extraction.
