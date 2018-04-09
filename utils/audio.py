@@ -9,7 +9,7 @@ import librosa
 
 import cv2
 
-def openAudioFile(path, sample_rate=48000, as_mono=True, mean_substract=False):
+def openAudioFile(path, sample_rate=44100, as_mono=True, mean_substract=False):
     
     # Open file with librosa (uses ffmpeg or libav)
     sig, rate = librosa.load(path, sr=sample_rate, mono=as_mono)
@@ -134,7 +134,7 @@ def specsFromFile(path, rate, seconds, overlap, minlen, shape, start=-1, end=-1,
     
 if __name__ == '__main__':
 
-    for spec in specsFromFile('../example/Acadian Flycatcher.wav', 48000, 1, 0, 1, shape=(128, 256), fmin=300, fmax=15000):
+    for spec in specsFromFile('../example/Acadian Flycatcher.wav', 44100, 1, 0, 1, shape=(128, 256), fmin=300, fmax=15000):
 
         # Show spec and wait for enter key
         cv2.imshow('SPEC', spec)
