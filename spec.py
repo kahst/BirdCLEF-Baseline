@@ -87,7 +87,7 @@ def parseDataset():
                             os.makedirs(filepath)
 
                         # Filename contains s2n-ratio
-                        filename = str(int(noise[s] * 1000)).zfill(3) + '_' + afiles[i].split('.')[0] + '_' + str(s).zfill(2)
+                        filename = str(int(noise[s] * 1000)).zfill(3) + '_' + afiles[i].split('.')[0] + '_' + str(s).zfill(3)
 
                         # Write to HDD
                         cv2.imwrite(os.path.join(filepath, filename + '.png'), specs[s] * 255.0)
