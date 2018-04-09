@@ -32,13 +32,70 @@ You need to register for the challenges to access the data. After download, you 
 
 Our workflow consists of four main phases: First, we need to <b>sort the BirdCLEF training data</b>. Secondly, we <b>extract spectrograms</b> from audio recordings. Thirdly, we <b>train a deep neural net</b> based on the resulting spectrograms - we treat the audio classification task as an image processing problem. Finally, we <b>test the trained net</b> given a local validation set of unseen audio recordings.
 
-### Sort data
+### Sorting the data
 
-...
+We want to divide the dataset into a train and validation split. The validation split should comprise 10% of the entire dataset and should contain at least one sample per bird species. Additionally, we want to copy the samples into folders named after the class they represent. The training script uses subfolders as class names (labels), so the sorted dataset should look like this:
+
+```
+dataset
+¦
++--train   
+¦  ¦
+¦  +---species1
+¦  ¦      file011.wav
+¦  ¦      file012.wav
+¦  ¦      ...
+¦  ¦   
+¦  +---species2
+¦  ¦      file021.wav
+¦  ¦      file022.wav
+¦  ¦      ...
+¦  ¦    
+¦  +---...
+¦
++--val
+¦  ¦
+¦  +---species1
+¦  ¦      file013.wav
+¦  ¦      ...
+¦  ¦
+¦  +---species2
+¦  ¦      file023.wav
+¦  ¦      ...
+¦  ¦
+¦  +---...
+¦
++--metadata
+      file011.json
+      file012.json
+      ...
+
+```
+Before running the script `sort_data.py`, you need to adjust the path pointing to the extracted wav and xml files from the BirdCLEF training data in the `config.py` by setting the value for `TRAINSET_PATH`. We are using the scientific name of each species as label, that makes ist easier to include background species in the metric for evaluation. However, you can use any class name you want - the class ID provided with the xml files would be equally good.
+
+The `metadata` directory contains JSON-files which store some additional information, most importantly the list of background species of each recording.
+
+<i><b>Note:</b> You can use any other dataset for training, as long you organize it in the same way. Simply adjust the sorting script accordingly.</i>
 
 ### Spectrogram Extraction
 
-...
+Extracting spectrograms from audio recordings is a vital part of our system. We decided to use MEL-scale log-amplitude spectrograms which each represent one second of a recording. We are using <b>librosa</b> for all of the audio processing. The script `utils/audio.py` contains all the logic. You can run the script stand-alone with the provided example wav-file.
+
+The `config.py` contains a section with all important settings, like sample rate, chunk length and cut-off frequencies. These are the settings we are using as defaults:
+
+```
+SAMPLE_RATE = 44100
+SPEC_FMIN = 500
+SPEC_FMAX = 15000
+SPEC_LENGTH = 1.0
+SPEC_OVERLAP = 0.25
+SPEC_MINLEN = 1.0
+SPEC_SIGNAL_THRESHOLD = 0.001
+```
+
+Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `500 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction.
+
+Our rule-based spectrogram analysis rejects samples which do not contain any bird sounds. It also estimates the signal-to-noise ratio based on some simple calculations. The rejection threshold is set through the `SPEC_SIGNAL_THRESHOLD` value and will be preserved in the filename of the saved spectrogram file.
 
 ### Training
 
