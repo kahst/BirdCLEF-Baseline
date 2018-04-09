@@ -42,3 +42,4 @@ if __name__ == '__main__':
 
     cfg.LOG_MODE = 'all'
     r = evaluate()
+    log.export()
