@@ -11,60 +11,42 @@ def show(s, new_line=False):
 
     global log
 
-    if new_line:
-        print s
-        log += str(s) + '\n'
+    if isinstance(s, (list, tuple)):
+        for i in range(len(s)):
+            print s[i],
+            log += str(s[i])
+            if i < len(s) - 1:
+                log += ' '
     else:
         print s,
         log += str(s)
 
+    if new_line:
+        print ''
+        log += '\n'
+    else:
+        log += ' '
+    
+
 def i(s, new_line=True):
 
     if cfg.LOG_MODE in ['all', 'info']:
-        if isinstance(s, (list, tuple)):
-            for st in s:
-                show(st)
-        else:
-            show(s)
-
-        if new_line:
-            show('', True)
+        show(s, new_line)
 
 def p(s, new_line=True):
 
-    if cfg.LOG_MODE in ['all', 'progress']:
-        if isinstance(s, (list, tuple)):
-            for st in s:
-                show(st)
-        else:
-            show(s)
-
-        if new_line:
-            show('', True)
+    if cfg.LOG_MODE in ['all', 'progress']:        
+        show(s, new_line)            
 
 def e(s, new_line=True):
 
-    if cfg.LOG_MODE in ['all', 'error']:
-        if isinstance(s, (list, tuple)):
-            for st in s:
-                show(st)
-        else:
-            show(s)
-
-        if new_line:
-            show('', True)
+    if cfg.LOG_MODE in ['all', 'error']:        
+        show(s, new_line)       
 
 def r(s, new_line=True):
 
-    if cfg.LOG_MODE in ['all', 'result']:
-        if isinstance(s, (list, tuple)):
-            for st in s:
-                show(st)
-        else:
-            show(s)
-
-        if new_line:
-            show('', True)
+    if cfg.LOG_MODE in ['all', 'result']:        
+        show(s, new_line)       
 
 def clear():
 
