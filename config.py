@@ -18,9 +18,10 @@ def getRandomState():
 # Use 'sort_data.py' to organize the BirdCLEF dataset accordingly
 # Extract the BirdCLEF TrainingSet data into TRAINSET_PATH
 TRAINSET_PATH = 'datasets/TrainingSet/'
-DATASET_PATH = 'datasets/spec/'
-TESTSET_PATH = 'datasets/val/'
-METADATA_PATH = 'datasets/metadata/'
+DATASET_PATH = 'dataset/spec/'
+NOISE_PATH = 'dataset/noise/'
+TESTSET_PATH = 'dataset/val/'
+METADATA_PATH = 'dataset/metadata/'
 
 # Maximum number of classes to use
 MAX_CLASSES = 250
@@ -29,11 +30,11 @@ MAX_CLASSES = 250
 SORT_CLASSES_ALPHABETICALLY = False  
 
 # Specify minimum and maximum amount of samples (specs) per class
-MIN_SAMPLES_PER_CLASS = -1  # -1 = no minimum                                      
-MAX_SAMPLES_PER_CLASS = 500 # None = no limit
+MIN_SAMPLES_PER_CLASS = -1   # -1 = no minimum                                      
+MAX_SAMPLES_PER_CLASS = None # None = no limit
 
 # Specify the signal-to-noise interval you want to pick samples from (filename contains value)
-S2N_INTERVAL = [5, 120]
+S2N_INTERVAL = [50, 1200]
 
 # Size of validation split (0.05 = 5%)
 VAL_SPLIT = 0.05
@@ -41,10 +42,10 @@ VAL_SPLIT = 0.05
 ######################  SPECTROGRAMS  ######################
 
 # Sample rate for recordings, other sampling rates will force re-sampling
-SAMPLE_RATE = 44100
+SAMPLE_RATE = 44000
 
 # Specify min and max frequency for low and high pass
-SPEC_FMIN = 500
+SPEC_FMIN = 300
 SPEC_FMAX = 15000
 
 # Define length of chunks for spec generation, overlap of chunks and chunk min length
@@ -53,7 +54,7 @@ SPEC_OVERLAP = 0.25
 SPEC_MINLEN = 1.0
 
 # Threshold for distinction between noise and signal
-SPEC_SIGNAL_THRESHOLD = 0.001
+SPEC_SIGNAL_THRESHOLD = 0.0001
 
 # Limit the amount of specs per class when extracting spectrograms (None = no limit)
 MAX_SPECS_PER_CLASS = 1000
@@ -76,11 +77,18 @@ RESIZE_MODE = 'squeeze'
 # Normalization mode (values between -1 and 1)
 ZERO_CENTERED_NORMALIZATION = True
 
+# List of rejected specs, which we want to use as noise samples during augmentation
+if os.path.exists(NOISE_PATH):
+    NOISE_SAMPLES = [os.path.join(NOISE_PATH, s) for s in os.listdir(NOISE_PATH)]
+else:
+    NOISE_SAMPLES = []
+
 # Image augmentation, uncomment to use; specify mode + value
 IM_AUGMENTATION = {#'roll_h':0.5,                   # Horizontal roll
                    'roll_v':0.1,                    # Vertical roll
                    #'crop':[0.1, 0.0, 0.05, 0.0],   # Random crop - top, left, bottom, right
                    #'noise':0.05,                   # Gaussian noise
+                   'add':NOISE_SAMPLES,             # List of specs to add to original sample
                    #'brightness':0.15,              # Adjust brightness
                    #'dropout':0.25,                 # Dropout single pixels
                    #'blackout':0.10,                # Dropout entire regions
@@ -93,7 +101,7 @@ IM_AUGMENTATION = {#'roll_h':0.5,                   # Horizontal roll
 
 # Maximum number of random augmentations per image
 # Each try has 50% chance of success; we do not use duplicate augmentations
-AUGMENTATION_COUNT = 1
+AUGMENTATION_COUNT = 2
 
 # Probability for image augmentation
 AUGMENTATION_PROBABILITY = 0.5
@@ -108,6 +116,8 @@ AUGMENTATION_PROBABILITY = 0.5
 NONLINEARITY = 'relu'
 
 # Number of filters in each convolutional layer group
+# You can change the number of groups by changing the amount of
+# values in the array (adjust KERNEL_SIZES accordingly!)
 FILTERS = [32, 64, 128, 256, 512]
 
 # Size of kernels in each convolution (we use 'same' padding)
@@ -134,12 +144,12 @@ MODEL_PATH = 'snapshots/'
 PRETRAINED_MODEL_NAME = None # e.g. 'BirdCLEF_TUC_CLO_EXAMPLE_model_params_epoch_50.pkl'
 
 # If the output size of the pre-trained model differs from the current model, set flag to False
-LOAD_OUTPUT_LAYER = True
+LOAD_OUTPUT_LAYER = False
 
 #######################  TRAINING  ########################
 
 # Number of epochs to train
-EPOCHS = 60
+EPOCHS = 50
 
 # Start epoch, important if you use a pre-trained model to continue training
 EPOCH_START = 1
@@ -162,7 +172,7 @@ L2_WEIGHT = 0
 OPTIMIZER = 'adam'
 
 # Epochs for snapshot save, [-1] = after every epoch
-SNAPSHOT_EPOCHS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+SNAPSHOT_EPOCHS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
 # Epochs to wait before early stopping
 EARLY_STOPPING_WAIT = 10
@@ -172,14 +182,17 @@ EARLY_STOPPING_WAIT = 10
 # .pkl file of model to test (not the params-file)
 TEST_MODEL = None # e.g. 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl'
 
-# Maximum amount of randomly selected files from the local validation set
-MAX_TEST_FILES = 500
+# Maximum amount of randomly selected files from the local validation set (None = no limit)
+MAX_TEST_FILES = None
 
 # Limit the amount of test files per class
 MAX_TEST_SAMPLES_PER_CLASS = -1
 
 # Limit the amount of (randomly) extracted specs per file (GPU memory!)
 MAX_SPECS_PER_FILE = 64
+
+# Include background species in metric (labels need to be sci-names)
+TEST_WITH_BG_SPECIES = True
 
 ####################  STATS AND LOG  ######################
 

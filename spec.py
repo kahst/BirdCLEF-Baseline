@@ -81,23 +81,35 @@ def parseDataset():
                     # Above SIGNAL_THRESHOLD?
                     if noise[s] >= cfg.SPEC_SIGNAL_THRESHOLD:
 
-                        # Create target path
+                        # Create target path for accepted specs
                         filepath = os.path.join(cfg.DATASET_PATH, c)
                         if not os.path.exists(filepath):
                             os.makedirs(filepath)
 
-                        # Filename contains s2n-ratio
-                        filename = str(int(noise[s] * 1000)).zfill(3) + '_' + afiles[i].split('.')[0] + '_' + str(s).zfill(3)
-
-                        # Write to HDD
-                        cv2.imwrite(os.path.join(filepath, filename + '.png'), specs[s] * 255.0)
-
                         # Count specs
                         spec_cnt += 1
 
-                        # Do we have enough specs already?
-                        if spec_cnt >= max_specs:
-                            break
+                    else:
+
+                        # Create target path for rejected specs -
+                        # but we don't want to save every sample
+                        if RANDOM.choice([True, False], p=[0.01, 0.99]):
+                            filepath = os.path.join(cfg.NOISE_PATH)
+                            if not os.path.exists(filepath):
+                                os.makedirs(filepath)
+                        else:
+                            filepath = None
+                    
+                    if filepath:
+                        # Filename contains s2n-ratio
+                        filename = str(int(noise[s] * 10000)).zfill(4) + '_' + afiles[i].split('.')[0] + '_' + str(s).zfill(3)
+
+                        # Write to HDD
+                        cv2.imwrite(os.path.join(filepath, filename + '.png'), specs[s] * 255.0)                        
+
+                    # Do we have enough specs already?
+                    if spec_cnt >= max_specs:
+                        break
 
                 # Stats
                 log.i((spec_cnt, 'specs'))       
