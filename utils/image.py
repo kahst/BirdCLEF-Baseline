@@ -100,6 +100,9 @@ def prepare(img):
 ######################## RESIZING ########################
 def resize(img, width, height, mode='squeeze'):
 
+    if img.shape[:2] == (height, width):
+        return img
+
     if mode == 'crop' or mode == 'cropCenter':
         img = cropCenter(img, width, height)
     elif mode == 'cropRandom':
@@ -259,6 +262,8 @@ def augment(img, augmentation={}, count=3, probability=0.5):
                 img = hue(img, augmentations[aug])
             elif aug == 'lightness':
                 img = lightness(img, augmentations[aug])
+            elif aug == 'add':
+                img = add(img, augmentations[aug])
             else:
                 pass
 
@@ -386,6 +391,20 @@ def lightness(img, amount=0.25):
         img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
     except:
         pass
+
+    return img
+
+def add(img, items):
+
+    # Choose one item from List
+    index = RANDOM.randint(len(items))
+
+    # Open and resize image
+    img2 = openImage(items[index], cfg.IM_DIM)
+    img2 = resize(img2, img.shape[1], img.shape[0])
+
+    # Add images and calculate average
+    img = (img + img2) / 2.0
 
     return img
 
