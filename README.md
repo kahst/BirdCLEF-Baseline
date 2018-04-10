@@ -87,7 +87,7 @@ The `config.py` contains a section with all important settings, like sample rate
 
 ```
 SAMPLE_RATE = 44100
-SPEC_FMIN = 500
+SPEC_FMIN = 300
 SPEC_FMAX = 15000
 SPEC_LENGTH = 1.0
 SPEC_OVERLAP = 0.25
@@ -199,13 +199,12 @@ mkdir Build
 cd Build
 cmake .. -DCMAKE_BUILD_TYPE=Release # or Debug if you are investigating a crash
 make
-make install
+sudo make install
 cd ..
 
-python setup.py build
+sudo python setup.py build
 sudo python setup.py install
 
-python setup.py build_ext -L $MY_PREFIX/lib -I $MY_PREFIX/include
 sudo ldconfig
 ```
 
