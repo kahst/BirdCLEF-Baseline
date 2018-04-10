@@ -79,9 +79,11 @@ The `metadata` directory contains JSON-files which store some additional informa
 
 ### Spectrogram Extraction
 
-Extracting spectrograms from audio recordings is a vital part of our system. We decided to use MEL-scale log-amplitude spectrograms which each represent one second of a recording. We are using <b>librosa</b> for all of the audio processing. The script `utils/audio.py` contains all the logic. You can run the script stand-alone with the provided example wav-file.
+Extracting spectrograms from audio recordings is a vital part of our system. We decided to use MEL-scale log-amplitude spectrograms, which each represent one second of a recording. We are using <b>librosa</b> for all of the audio processing. The script `utils/audio.py` contains all the logic. You can run the script stand-alone with the provided example wav-file.
 
-The `config.py` contains a section with all important settings, like sample rate, chunk length and cut-off frequencies. These are the settings we are using as defaults:
+You can run the script `spec.py` to start the extraction - this might take a while, depending on your CPU.
+
+The `config.py` contains a section with all important settings, like sample rate, chunk length and cut-off frequencies. We are using these settinsg as defaults:
 
 ```
 SAMPLE_RATE = 44100
@@ -95,11 +97,30 @@ SPEC_SIGNAL_THRESHOLD = 0.001
 
 Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `500 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction.
 
-Our rule-based spectrogram analysis rejects samples which do not contain any bird sounds. It also estimates the signal-to-noise ratio based on some simple calculations. The rejection threshold is set through the `SPEC_SIGNAL_THRESHOLD` value and will be preserved in the filename of the saved spectrogram file.
+Our rule-based spectrogram analysis rejects samples, which do not contain any bird sounds. It also estimates the signal-to-noise ratio based on some simple calculations. The rejection threshold is set through the `SPEC_SIGNAL_THRESHOLD` value and will be preserved in the filename of the saved spectrogram file.
 
 ### Training
 
-...
+If your dataset is sorted and all specs have been extracted, you can start training your own CNN. If you changed some of the paths, make sure to adjust the settings in the `config.py` accordingly.
+
+There are numerous settings that you can change to adjust the net itself and the training process. Most of them might have significant impact on the duration of the training process, memory consumption and result quality.
+
+All options are preceded by a comment explaining the impact of changes - if you still have questions or run into any trouble, please do not hesitate to contact us.
+
+To start the training, simply run the script `train.py`. This will automatically call the following procedures:
+
+- parsing the dataset for samples
+- building a neural net
+- compiling Thenao test and train functions
+- generating batches of samples (incl. augmentation)
+- training the net for some epochs
+- validating the net after each epoch
+- saving snapshots at certain points during training
+- saving best snapshopt after training has completed
+
+When finished (this might take a looooong time), you can find the best model in the `snapshot/` directory named after the run name specified in the `config.py`.
+
+<i><b>Note:</b> If you run out of GPU memory, you should consider lowering the batch size and/or input size of the net.</i>
 
 ### Testing
 
