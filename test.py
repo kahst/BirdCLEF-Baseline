@@ -53,8 +53,12 @@ def parseTestSet():
 
         # Get Species (+ background species)
         # Only species present in the trained classes are relevant for the metric
-        # Still, we are adding anything we have right now
-        species = [data['sci-name']] + data['background']
+        # Still, we are adding anything we have right now and sort it out later
+        if cfg.TEST_WITH_BG_SPECIES:
+            bg = data['background']
+        else:
+            bg = []
+        species = [data['sci-name']] + bg
 
         # Add data to test set
         TEST.append((f, species))
@@ -69,11 +73,11 @@ def parseTestSet():
 def predictionPooling(p):
     
     #You can test different prediction pooling strategies here
-    #We only use average pooling
     if p.ndim == 2:
 
-        # Simple average pooling, other strategies might be more effective
-        p_pool = np.mean(p, axis=0) 
+        # Mean exponential pooling gives better results for monophonic recordings
+        p_pool = np.mean((p * 2) ** 3, axis=0)
+        p_pool[p_pool > 1.0] = 1.0
         
     else:
         p_pool = p
@@ -171,13 +175,14 @@ def test(SNAPSHOT):
                 if label in cfg.CLASSES:
                     targets[cfg.CLASSES.index(label)] = 1.0                     
             lrap = metrics.lrap(np.expand_dims(p_pool, 0), np.expand_dims(targets, 0))
-            stats.setValue('lrap', lrap, mode='append')
-            log.i(('LRAP:', int(lrap * 1000) / 1000.0), new_line=False)
-            log.i(('MLRAP:', int(np.mean(stats.getValue('lrap')) * 1000) / 1000.0), new_line=False)
+            stats.setValue('lrap', lrap, mode='append')            
 
-            # Top label
-            log.i((labels[0], filename), new_line=False)
-            log.i((p_sorted[0][0], int(p_sorted[0][1] * 1000) / 10.0, '%'), new_line=True)
+            # Show sample stats            
+            log.i((filename))
+            log.i(('\tLABELS:', labels))
+            log.i(('\tTOP PREDICTION:', p_sorted[0][0], int(p_sorted[0][1] * 1000) / 10.0, '%'))
+            log.i(('\tLRAP:', int(lrap * 1000) / 1000.0), new_line=True)
+            log.i(('\tMLRAP:', int(np.mean(stats.getValue('lrap')) * 1000) / 1000.0), new_line=True)
             
             # Save some stats
             if p_sorted[0][0] == labels[0]:
@@ -208,9 +213,9 @@ def test(SNAPSHOT):
 if __name__ == '__main__':
 
     # Settings    
-    cfg.MAX_TEST_FILES = 250
+    cfg.MAX_TEST_FILES = 500
     cfg.MAX_TEST_SAMPLES_PER_CLASS = -1
-    cfg.TEST_MODEL = 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl' 
+    cfg.TEST_MODEL = 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_60.pkl' 
 
     # Load trained net
     SNAPSHOT = io.loadModel(cfg.TEST_MODEL)    
