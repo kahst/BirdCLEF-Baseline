@@ -15,7 +15,7 @@ This project is licensed under the terms of the MIT license.
 ## Installation
 This is a Thenao/Lasagne implementation in Python 2.7 for the identification of hundreds of bird species based on their vocalizations. This code is tested using Ubuntu 16.04 LTS but should work with other distributions as well.
 
-Before cloning the repository, you need to install CUDA, cuDNN, OpenCV, Libav, Theano and Lasagne. You can find more detailed instructions [below](https://github.com/kahst/BirdCLEF-Baseline#installation-details). After that, you can use the Python package tool PIP to install missing dependencies after the download of the repository:
+Before cloning the repository, you need to install CUDA, cuDNN, OpenCV, Libav, Theano and Lasagne. You can find more detailed instructions [below](#installation-details). After that, you can use the Python package tool PIP to install missing dependencies after the download of the repository:
 
 ```
 git clone https://github.com/kahst/BirdCLEF-Baseline.git
@@ -159,7 +159,7 @@ export PATH=/usr/local/cuda-9.1/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
-<i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details apout your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.
+<i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details apout your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.</i>
 
 ### cuDNN
 
