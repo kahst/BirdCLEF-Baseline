@@ -15,7 +15,7 @@ This project is licensed under the terms of the MIT license.
 ## Installation
 This is a Thenao/Lasagne implementation in Python 2.7 for the identification of hundreds of bird species based on their vocalizations. This code is tested using Ubuntu 16.04 LTS but should work with other distributions as well.
 
-Before cloning the repository, you need to install CUDA, cuDNN, OpenCV, Libav, Theano and Lasagne. You can find more detailed instructions below. After that, you can use the Python package tool PIP to install missing dependencies after the download of the repository:
+Before cloning the repository, you need to install CUDA, cuDNN, OpenCV, Libav, Theano and Lasagne. You can find more detailed instructions [below](https://github.com/kahst/BirdCLEF-Baseline#installation-details). After that, you can use the Python package tool PIP to install missing dependencies after the download of the repository:
 
 ```
 git clone https://github.com/kahst/BirdCLEF-Baseline.git
@@ -95,7 +95,7 @@ SPEC_MINLEN = 1.0
 SPEC_SIGNAL_THRESHOLD = 0.001
 ```
 
-Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `500 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction.
+Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `300 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction.
 
 Our rule-based spectrogram analysis rejects samples, which do not contain any bird sounds. It also estimates the signal-to-noise ratio based on some simple calculations. The rejection threshold is set through the `SPEC_SIGNAL_THRESHOLD` value and will be preserved in the filename of the saved spectrogram file.
 
@@ -158,6 +158,8 @@ Add to environment path:
 export PATH=/usr/local/cuda-9.1/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
+
+<i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details apout your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.
 
 ### cuDNN
 
