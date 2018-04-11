@@ -130,6 +130,13 @@ When finished (this might take a looooong time), you can find the best model in 
 
 The versions that you need for your machine differ, depending on OS and GPU. The installation process listed below should work with Ubuntu 16.04 LTS and any CUDA-capable GPU by NVIDIA.
 
+First of all, you should update your system:
+
+```
+sudo apt-get update
+sudo apt-get upgrade
+```
+
 ### CUDA
 
 Download CUDA 9.1 (you might want to use newer versions, if available): 
