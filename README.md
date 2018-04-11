@@ -159,7 +159,7 @@ export PATH=/usr/local/cuda-9.1/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
-<i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details apout your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.</i>
+<i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details about your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.</i>
 
 ### cuDNN
 
