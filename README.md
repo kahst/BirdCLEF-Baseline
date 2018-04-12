@@ -152,11 +152,11 @@ sudo apt-get update
 sudo apt-get install cuda
 ```
 
-Add to environment path:
+Add the paths to the .bashrc:
 
 ```
-export PATH=/usr/local/cuda-9.1/bin${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+PATH=/usr/local/cuda-9.1/bin${PATH:+:${PATH}}
+LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
 <i><b>Note:</b> You should be able to run `nvidia-smi` as command and see some details about your GPU. If not, the proper drivers are missing. You can install the drivers for your GPU with e.g. `sudo apt-get install nvidia-390`.</i>
@@ -189,13 +189,8 @@ sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
 Prerequisites (incl. Python):
 
 ```
-sudo apt-get install python-dev
-sudo apt-get install python-pip
-sudo pip install numpy
-sudo pip install scipy
-sudo apt-get install libblas-dev liblapack-dev
-sudo apt-get install cmake
-sudo pip install cython
+sudo apt-get install python-dev python-pip libblas-dev liblapack-dev cmake
+sudo pip install numpy, scipy, cython
 ```
 Install gpuarray:
 
