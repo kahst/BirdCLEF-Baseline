@@ -2,7 +2,7 @@
 By [Stefan Kahl](http://medien.informatik.tu-chemnitz.de/skahl/about/), [Thomas Wilhelm-Stein](https://www.tu-chemnitz.de/informatik/HomePages/Medieninformatik/team.php.en), [Holger Klinck](http://www.birds.cornell.edu/page.aspx?pid=1735&id=489), [Danny Kowerko](https://www.tu-chemnitz.de/informatik/mc/staff.php.en), and [Maximilian Eibl](https://www.tu-chemnitz.de/informatik/HomePages/Medieninformatik/team.php.en)
 
 ## Introduction
-We provide a baseline system for the LifeCLEF bird identification task BirdCLEF2017. We encourage participants to build upon the code base and share their results for future reference. We will keep the repository updated and will add improvements and submission boilerplate in the future. 
+We provide a baseline system for the LifeCLEF bird identification task BirdCLEF2018. We encourage participants to build upon the code base and share their results for future reference. We will keep the repository updated and will add improvements and submission boilerplate in the future. 
 
 <b>If you have any questions or problems running the scripts, don't hesitate to contact us.</b>
 
@@ -11,6 +11,20 @@ Contact:  [Stefan Kahl](http://medien.informatik.tu-chemnitz.de/skahl/about/), [
 E-Mail: stefan.kahl@informatik.tu-chemnitz.de
 
 This project is licensed under the terms of the MIT license.
+
+## Citation
+
+Please cite the paper in your publications if the repository helps your research.
+
+```
+@article{kahl2018recognizing,
+  title={Recognizing Birds from Sound - The 2018 BirdCLEF Baseline System},
+  author={Kahl, Stefan and Wilhelm-Stein, Thomas and Klinck, Holger and Kowerko, Danny and Eibl, Maximilian},
+  year={2018}
+}
+```
+
+<b>You can download our paper here:</b> [Coming soon...](https://github.com/kahst/BirdCLEF-Baseline)
 
 ## Installation
 This is a Thenao/Lasagne implementation in Python 2.7 for the identification of hundreds of bird species based on their vocalizations. This code is tested using Ubuntu 16.04 LTS but should work with other distributions as well.
@@ -26,7 +40,9 @@ sudo pip install –r requirements.txt
 ## Dataset
 You can download the BirdCLEF training and test data via https://www.crowdai.org. 
 
-You need to register for the challenges to access the data. After download, you need to unpack the archive and change the path to the resulting directory containing "wav" and "xml" folders in the `config.py` script.
+You need to register for the challenges to access the data. After download, you need to unpack the two archives and change the path to the resulting directory containing "wav" and "xml" folders in the `config.py` script.
+
+<i><b>Note:</b> The dataset is quite large, you will need <b>~250 GB</b> for the training data.</i>
 
 ## Workflow
 
@@ -120,11 +136,25 @@ To start the training, simply run the script `train.py`. This will automatically
 
 When finished (this might take a looooong time), you can find the best model in the `snapshot/` directory named after the run name specified in the `config.py`.
 
-<i><b>Note:</b> If you run out of GPU memory, you should consider lowering the batch size and/or input size of the net.</i>
+<i><b>Note:</b> If you run out of GPU memory, you should consider lowering the batch size and/or input size of the net, or dial down on the parameter count of the net (But hey: Who wants to do that?).</i>
 
 ### Testing
 
-...
+We already created a local validation split with `sort_data.py`. We now make use of those unseen recordings and assess the performance of the best snapshot from training (e.g. `TEST_MODEL = 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl'`). 
+
+Testing includes the spectrogram extraction for each test recording (specify how many specs to use with `MAX_SPECS_PER_FILE`) and the prediction of class scores for each segment. Finally, we calculate the global score for the entire recording by pooling individual scores of all specs. We use <b>Mean Exponential Pooling</b> for that - you can change the pooling strategy in the `test.py` by adjusting this line: 
+
+```
+p_pool = np.mean((p * 2) ** 3, axis=0)
+```
+
+The local validation split from our baseline approach contains 4399 recordings - 10% of the entire training set but at least one recording per species. The metric we use is called <b>Mean Label Ranking Average Precision</b> (MLRAP) and our best net scores a MLRAP of 0.000 including background species (`TEST_WITH_BG_SPECIES = True`).
+
+<b>The results are competitive, but still - there is a lot of room for improvements :)</b>
+
+### Evaluation
+
+If you want to experiment with the system and evaluate different settings or CNN layouts, you can simply change some values in the `config.py` and run the script `evaluate.py`. This will automatically run the training, save a snapshot and test the trained model using the local validation split. All you have to do is sit and wait for a couple of hours :)
 
 ## Installation Details
 
