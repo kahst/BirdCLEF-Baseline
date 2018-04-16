@@ -76,8 +76,11 @@ def predictionPooling(p):
     if p.ndim == 2:
 
         # Mean exponential pooling gives better results for monophonic recordings
-        p_pool = np.mean((p * 2) ** 3, axis=0)
+        p_pool = np.mean((p * 2) ** 2, axis=0)
         p_pool[p_pool > 1.0] = 1.0
+
+        # Simple average pooling
+        #p_pool = np.mean(p, axis=0)
         
     else:
         p_pool = p
@@ -96,7 +99,14 @@ def getSpecBatches(split):
         spec_batch = []
 
         # Get specs for file
-        for spec in audio.specsFromFile(t[0], cfg.SAMPLE_RATE, cfg.SPEC_LENGTH, cfg.SPEC_OVERLAP, cfg.SPEC_MINLEN, shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0])):
+        for spec in audio.specsFromFile(t[0],
+                                        cfg.SAMPLE_RATE,
+                                        cfg.SPEC_LENGTH,
+                                        cfg.SPEC_OVERLAP,
+                                        cfg.SPEC_MINLEN,
+                                        shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0]),
+                                        fmin=cfg.SPEC_FMIN,
+                                        fmax=cfg.SPEC_FMAX):
 
             # Resize spec
             spec = image.resize(spec, cfg.IM_SIZE[0], cfg.IM_SIZE[1], mode=cfg.RESIZE_MODE)
@@ -178,10 +188,10 @@ def test(SNAPSHOT):
             stats.setValue('lrap', lrap, mode='append')            
 
             # Show sample stats            
-            log.i((filename))
-            log.i(('\tLABELS:', labels))
-            log.i(('\tTOP PREDICTION:', p_sorted[0][0], int(p_sorted[0][1] * 1000) / 10.0, '%'))
-            log.i(('\tLRAP:', int(lrap * 1000) / 1000.0), new_line=True)
+            log.i((filename), new_line=True)
+            log.i(('\tLABELS:', labels), new_line=True)
+            log.i(('\tTOP PREDICTION:', p_sorted[0][0], int(p_sorted[0][1] * 1000) / 10.0, '%'), new_line=True)
+            log.i(('\tLRAP:', int(lrap * 1000) / 1000.0), new_line=False)
             log.i(('\tMLRAP:', int(np.mean(stats.getValue('lrap')) * 1000) / 1000.0), new_line=True)
             
             # Save some stats
@@ -211,11 +221,6 @@ def test(SNAPSHOT):
     return np.mean(stats.getValue('avgp')), int(np.mean(stats.getValue('time_per_file')) * 1000)
 
 if __name__ == '__main__':
-
-    # Settings    
-    cfg.MAX_TEST_FILES = 500
-    cfg.MAX_TEST_SAMPLES_PER_CLASS = -1
-    cfg.TEST_MODEL = 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_60.pkl' 
 
     # Load trained net
     SNAPSHOT = io.loadModel(cfg.TEST_MODEL)    

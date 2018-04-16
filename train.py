@@ -148,7 +148,7 @@ def train(NET, TRAIN, VAL):
             log.r(('TIME:', stats.getValue('epoch_time'), 's'))
 
             # Save snapshot?
-            if epoch in cfg.SNAPSHOT_EPOCHS or cfg.SNAPSHOT_EPOCHS[0] == -1:
+            if not epoch % cfg.SNAPSHOT_EPOCHS:
                 io.saveModel(NET, cfg.CLASSES, epoch)
                 io.saveParams(NET, cfg.CLASSES, epoch)
 

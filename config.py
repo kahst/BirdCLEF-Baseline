@@ -18,13 +18,13 @@ def getRandomState():
 # Use 'sort_data.py' to organize the BirdCLEF dataset accordingly
 # Extract the BirdCLEF TrainingSet data into TRAINSET_PATH
 TRAINSET_PATH = 'datasets/TrainingSet/'
-DATASET_PATH = 'dataset/spec/'
-NOISE_PATH = 'dataset/noise/'
-TESTSET_PATH = 'dataset/val/'
-METADATA_PATH = 'dataset/metadata/'
+DATASET_PATH = 'datasets/spec/'
+NOISE_PATH = 'datasets/noise/'
+TESTSET_PATH = 'datasets/val/'
+METADATA_PATH = 'datasets/metadata/'
 
-# Maximum number of classes to use
-MAX_CLASSES = 250
+# Maximum number of classes to use (None = no limit)
+MAX_CLASSES = None
 
 # If not sorted, using only a subset of classes (MAX_CLASSES) will select classes randomly
 SORT_CLASSES_ALPHABETICALLY = False  
@@ -42,7 +42,7 @@ VAL_SPLIT = 0.05
 ######################  SPECTROGRAMS  ######################
 
 # Sample rate for recordings, other sampling rates will force re-sampling
-SAMPLE_RATE = 44000
+SAMPLE_RATE = 44100
 
 # Specify min and max frequency for low and high pass
 SPEC_FMIN = 300
@@ -112,16 +112,19 @@ AUGMENTATION_PROBABILITY = 0.5
 # We are using a custom architecture with only a few layers and no shortcuts
 # You can find more Lasagne model implementations here: https://github.com/Lasagne/Recipes/tree/master/modelzoo
 
-# Options are: relu, lrelu (leaky relu), elu and identity
+# Options are: relu, lrelu (leaky relu), vlrelu (very leaky relu), elu and identity
 NONLINEARITY = 'relu'
 
 # Number of filters in each convolutional layer group
 # You can change the number of groups by changing the amount of
 # values in the array (adjust KERNEL_SIZES accordingly!)
-FILTERS = [32, 64, 128, 256, 512]
+# 5 values == 5 convolutional groups
+FILTERS = [64, 128, 256, 512, 1024]
 
 # Size of kernels in each convolution (we use 'same' padding)
-KERNEL_SIZES = [3, 3, 3, 3, 3]
+KERNEL_SIZES = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
+
+NUM_OF_GROUPS = [1, 1, 1, 1, 1]
 
 # Activate Batch Norm
 BATCH_NORM = True
@@ -129,8 +132,14 @@ BATCH_NORM = True
 # Reduce spatial dimension with MaxPooling (True) or strided convolutions (False)
 MAX_POOLING = True
 
-# Dropout probability (we use channel dropout)
-DROPOUT = 0.1
+# Specify the type of dropout
+# 'random': Standard dropout of random pixels per channel
+# 'location': Dropout same pixels across all channels
+# 'channel': Dropout of entire channels
+DROPOUT_TYPE = 'random'
+
+# Dropout probability (higher == more regularization)
+DROPOUT = 0.0
 
 #######################  MODEL I/O ########################
 
@@ -149,7 +158,7 @@ LOAD_OUTPUT_LAYER = False
 #######################  TRAINING  ########################
 
 # Number of epochs to train
-EPOCHS = 50
+EPOCHS = 100
 
 # Start epoch, important if you use a pre-trained model to continue training
 EPOCH_START = 1
@@ -171,8 +180,8 @@ L2_WEIGHT = 0
 # Optimizer options are: 'adam', 'sgd' and 'nesterov'
 OPTIMIZER = 'adam'
 
-# Epochs for snapshot save, [-1] = after every epoch
-SNAPSHOT_EPOCHS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+# Epochs between snapshot save
+SNAPSHOT_EPOCHS = 5
 
 # Epochs to wait before early stopping
 EARLY_STOPPING_WAIT = 10
