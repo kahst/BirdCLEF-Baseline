@@ -37,6 +37,14 @@ cd BirdCLEF-Baseline
 sudo pip install –r requirements.txt
 ```
 
+## Docker
+On your host system you need to ...
+1. Install [Docker Engine Utility for NVIDIA GPUs](https://github.com/NVIDIA/nvidia-docker)
+2. Clone repository `git clone https://github.com/kahst/BirdCLEF-Baseline.git`
+2. Run `/docker-run <path_to_datasets>`
+
+The `docker-run.sh` script takes care of all required tasks (see [Workflow](#workflow))
+
 ## Dataset
 You can download the BirdCLEF training and test data via https://www.crowdai.org. 
 

@@ -1,0 +1,13 @@
+[global]
+device=cuda
+floatX=float32
+optimizer_excluding=low_memory
+
+[mode]=FAST_RUN
+
+[dnn.conv]
+algo_bwd_filter=deterministic
+algo_bwd_data=deterministic
+
+[gpuarray]
+preallocate=0
