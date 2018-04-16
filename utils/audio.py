@@ -59,7 +59,7 @@ def melspec(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True, p
     melspec = librosa.feature.melspectrogram(y=sig, sr=SAMPLE_RATE, hop_length=HOP_LEN, n_fft=N_FFT, n_mels=N_MELS, fmax=FMAX, fmin=FMIN, power=2.0)
     
     # Convert power spec to dB scale (compute dB relative to peak power)
-    melspec = librosa.power_to_db(melspec, ref_power=np.max, top_db=100)
+    melspec = librosa.power_to_db(melspec, ref=np.max, top_db=100)
 
     # Flip spectrum vertically (only for better visialization, low freq. at bottom)
     melspec = melspec[::-1, ...]
