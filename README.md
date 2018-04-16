@@ -41,7 +41,7 @@ sudo pip install –r requirements.txt
 On your host system you need to ...
 1. Install [Docker Engine Utility for NVIDIA GPUs](https://github.com/NVIDIA/nvidia-docker)
 2. Clone repository `git clone https://github.com/kahst/BirdCLEF-Baseline.git`
-2. Run `/docker-run <path_to_datasets>`
+2. Run `./docker-run <path_to_datasets>`
 
 The `docker-run.sh` script takes care of all required tasks (see [Workflow](#workflow))
 
@@ -153,7 +153,7 @@ We already created a local validation split with `sort_data.py`. We now make use
 Testing includes the spectrogram extraction for each test recording (specify how many specs to use with `MAX_SPECS_PER_FILE`) and the prediction of class scores for each segment. Finally, we calculate the global score for the entire recording by pooling individual scores of all specs. We use <b>Mean Exponential Pooling</b> for that - you can change the pooling strategy in the `test.py` by adjusting this line: 
 
 ```
-p_pool = np.mean((p * 2) ** 3, axis=0)
+p_pool = np.mean((p * 2) ** 2, axis=0)
 ```
 
 The local validation split from our baseline approach contains 4399 recordings - 10% of the entire training set but at least one recording per species. The metric we use is called <b>Mean Label Ranking Average Precision</b> (MLRAP) and our best net scores a MLRAP of 0.000 including background species (`TEST_WITH_BG_SPECIES = True`).
@@ -163,6 +163,12 @@ The local validation split from our baseline approach contains 4399 recordings -
 ### Evaluation
 
 If you want to experiment with the system and evaluate different settings or CNN layouts, you can simply change some values in the `config.py` and run the script `evaluate.py`. This will automatically run the training, save a snapshot and test the trained model using the local validation split. All you have to do is sit and wait for a couple of hours :)
+
+### Submission
+
+We will soon provide the code that you can use to generate a valid submission for the monophone task...
+
+<i><b>Note:</b> You will need to download the test data available from <b>crowdai.org</b>, first.</i>
 
 ## Installation Details
 
@@ -203,7 +209,7 @@ LD_LIBRARY_PATH=/usr/local/cuda-9.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 Download cuDNN (you need to be registered):
 
-http://docs.nvidia.com/deeplearning/sdk/cudnn-install/index.html
+https://developer.nvidia.com/cudnn
 
 Installing from a Tar File:
 
