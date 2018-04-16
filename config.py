@@ -18,10 +18,10 @@ def getRandomState():
 # Use 'sort_data.py' to organize the BirdCLEF dataset accordingly
 # Extract the BirdCLEF TrainingSet data into TRAINSET_PATH
 TRAINSET_PATH = 'datasets/TrainingSet/'
-DATASET_PATH = 'datasets/spec/'
-NOISE_PATH = 'datasets/noise/'
-TESTSET_PATH = 'datasets/val/'
-METADATA_PATH = 'datasets/metadata/'
+DATASET_PATH = os.path.join(TRAINSET_PATH, 'spec')
+NOISE_PATH = os.path.join(TRAINSET_PATH, 'noise')
+TESTSET_PATH = os.path.join(TRAINSET_PATH, 'val')
+METADATA_PATH = os.path.join(TRAINSET_PATH, 'metadata')
 
 # Maximum number of classes to use (None = no limit)
 MAX_CLASSES = None
