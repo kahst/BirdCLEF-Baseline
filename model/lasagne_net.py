@@ -38,6 +38,7 @@ def nonlinearity(name):
     nonlinearities = {'rectify': nl.rectify,
                      'relu': nl.rectify,
                      'lrelu': nl.LeakyRectify(0.01),
+                     'vlrelu': nl.LeakyRectify(0.33),
                      'elu': nl.elu,
                      'softmax': nl.softmax,
                      'sigmoid': nl.sigmoid,
@@ -51,7 +52,8 @@ def initialization(name):
             'softmax':init.HeNormal(gain=1.0),
             'elu':init.HeNormal(gain=1.0),
             'relu':init.HeNormal(gain=math.sqrt(2)),
-            'lrelu':init.HeNormal(gain=math.sqrt(2/(1+0.2**2))),
+            'lrelu':init.HeNormal(gain=math.sqrt(2/(1+0.01**2))),
+            'vlrelu':init.HeNormal(gain=math.sqrt(2/(1+0.33**2))),
             'rectify':init.HeNormal(gain=math.sqrt(2)),
             'identity':init.HeNormal(gain=math.sqrt(2))
             }
@@ -82,6 +84,7 @@ def build_model():
         net = batch_norm(l.Conv2DLayer(net,
                                        num_filters=cfg.FILTERS[i],
                                        filter_size=cfg.KERNEL_SIZES[i],
+                                       num_groups=cfg.NUM_OF_GROUPS[i],
                                        pad='same',
                                        stride=s,
                                        W=initialization(cfg.NONLINEARITY),
@@ -91,8 +94,13 @@ def build_model():
         if cfg.MAX_POOLING:
             net = l.MaxPool2DLayer(net, pool_size=2)
 
-        # Dropout Layer (we are using channel dropout here)
-        net = l.dropout_channels(net, p=cfg.DROPOUT)            
+        # Dropout Layer (we support different types of dropout)
+        if cfg.DROPOUT_TYPE == 'channels':
+            net = l.dropout_channels(net, p=cfg.DROPOUT)
+        elif cfg.DROPOUT_TYPE == 'location':
+            net = l.dropout_location(net, p=cfg.DROPOUT)
+        else:
+            net = l.DropoutLayer(net, p=cfg.DROPOUT)
         
         log.i(('\tGROUP', i + 1, 'OUT SHAPE:', l.get_output_shape(net)))
     
