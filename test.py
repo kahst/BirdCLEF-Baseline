@@ -138,19 +138,28 @@ def getSpecBatches(split):
         # yield batch, labels and filename
         yield spec_batch[:cfg.MAX_SPECS_PER_FILE], t[1], t[0].split(os.sep)[-1]
 
-def test(SNAPSHOT):
+def test(SNAPSHOTS):
 
-    # Settings
-    NET = SNAPSHOT['net']
-    cfg.CLASSES = SNAPSHOT['classes']
-    cfg.IM_DIM = SNAPSHOT['im_dim']
-    cfg.IM_SIZE = SNAPSHOT['im_size']
+    # Do we have more than one snapshot?
+    if not isinstance(SNAPSHOTS, (list, tuple)):
+        SNAPSHOTS = [SNAPSHOTS]
+        
+    # Load snapshots
+    test_functions = []
+    for s in SNAPSHOTS:
+
+        # Settings
+        NET = s['net']
+        cfg.CLASSES = s['classes']
+        cfg.IM_DIM = s['im_dim']
+        cfg.IM_SIZE = s['im_size']        
+
+        # Compile test function
+        test_net = birdnet.test_function(NET, hasTargets=False)
+        test_functions.append(test_net)    
 
     # Parse Testset
     TEST = parseTestSet()
-
-    # Compile test function
-    test_net = birdnet.test_function(NET, hasTargets=False)
     
     # Status
     log.i('START TESTING...')
@@ -166,7 +175,13 @@ def test(SNAPSHOT):
             stats.tic('pred_time')
 
             # Prediction
-            prediction_batch = test_net(spec_batch)
+            prediction_batch = []
+            for test_func in test_functions:
+                if len(prediction_batch) == 0:
+                    prediction_batch = test_func(spec_batch)
+                else:
+                    prediction_batch += test_func(spec_batch)
+            prediction_batch /= len(test_functions)            
 
             # Prediction pooling
             p_pool = predictionPooling(prediction_batch)
@@ -218,12 +233,16 @@ def test(SNAPSHOT):
     log.r(('TOP 1 MEAN CONFIDENCE:',max(0, np.mean(stats.getValue('top1_confidence')))))
     log.r(('TIME PER BATCH:', int(np.mean(stats.getValue('time_per_batch')) * 1000), 'ms'))
         
-    return np.mean(stats.getValue('avgp')), int(np.mean(stats.getValue('time_per_file')) * 1000)
+    return np.mean(stats.getValue('lrap')), int(np.mean(stats.getValue('time_per_file')) * 1000)
 
 if __name__ == '__main__':
 
-    # Load trained net
-    SNAPSHOT = io.loadModel(cfg.TEST_MODEL)    
+    # Load trained models
+    if not isinstance(cfg.TEST_MODELS, (list, tuple)):
+        cfg.TEST_MODELS = [cfg.TEST_MODELS]
+    SNAPSHOTS = []
+    for test_model in cfg.TEST_MODELS:
+        SNAPSHOTS.append(io.loadModel(test_model))    
 
-    # Test snapshot
-    MAP = test(SNAPSHOT)
+    # Test snapshots
+    MLRAP = test(SNAPSHOTS)

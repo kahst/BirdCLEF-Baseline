@@ -32,9 +32,9 @@ def evaluate():
     SNAPSHOT = io.loadModel(best_net)
 
     # Test snapshot
-    MAP, TIME_PER_EPOCH = test.test(SNAPSHOT)
+    MLRAP, TIME_PER_EPOCH = test.test(SNAPSHOT)
 
-    result = np.array([[MAP]], dtype='float32')
+    result = np.array([[MLRAP]], dtype='float32')
         
     return result
 
