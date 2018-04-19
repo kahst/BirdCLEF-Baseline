@@ -23,6 +23,10 @@ NOISE_PATH = os.path.join(TRAINSET_PATH, 'noise')
 TESTSET_PATH = os.path.join(TRAINSET_PATH, 'val')
 METADATA_PATH = os.path.join(TRAINSET_PATH, 'metadata')
 
+# Define if you want to 'copy', 'move' or 'symlink' audio files
+# If you use 'symlink' make sure your OS does support symbolic links and define TRAINSET_PATH absolute
+SORT_MODE = 'copy'
+
 # Maximum number of classes to use (None = no limit)
 MAX_CLASSES = None
 
@@ -189,7 +193,9 @@ EARLY_STOPPING_WAIT = 10
 ########################  TESTING  ########################
 
 # .pkl file of model to test (not the params-file)
-TEST_MODEL = None # e.g. 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl'
+# You can specify a list of .pkl-files to test ensembles
+# All models in an ensemble must contain the same CLASSES!
+TEST_MODELS = None # e.g. ['BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl']
 
 # Maximum amount of randomly selected files from the local validation set (None = no limit)
 MAX_TEST_FILES = None
