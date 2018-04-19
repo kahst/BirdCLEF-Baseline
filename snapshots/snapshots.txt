@@ -1,1 +1,9 @@
+You can find our best single model as download here:
 
+https://box.tu-chemnitz.de/index.php/s/tSrQtEkt4ranYzX
+
+Params-file:
+
+https://box.tu-chemnitz.de/index.php/s/t92tNijkTMFwxiP
+
+You should download both and place them in the snapshots-folder.
