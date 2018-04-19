@@ -20,6 +20,11 @@ from lasagne import objectives
 from lasagne import updates
 from lasagne import regularization
 
+try:
+    from lasagne.layers.dnn import batch_norm_dnn as l_batch_norm
+except ImportError:
+    from lasagne.layers import batch_norm as l_batch_norm 
+
 import config as cfg
 import lasagne_io as io
 from utils import log
@@ -29,7 +34,7 @@ from lasagne import random as lasagne_random
 ################ ADDITIONAL FUNCTUALITY #################
 def batch_norm(layer):
     if cfg.BATCH_NORM:
-        return l.batch_norm(layer)
+        return l_batch_norm(layer)
     else:
         return layer
 
