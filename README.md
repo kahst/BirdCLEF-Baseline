@@ -20,11 +20,12 @@ Please cite the paper in your publications if the repository helps your research
 @article{kahl2018recognizing,
   title={Recognizing Birds from Sound - The 2018 BirdCLEF Baseline System},
   author={Kahl, Stefan and Wilhelm-Stein, Thomas and Klinck, Holger and Kowerko, Danny and Eibl, Maximilian},
+  journal={arXiv preprint arXiv:1804.07177},
   year={2018}
 }
 ```
 
-<b>You can download our paper here:</b> [Coming soon...](https://github.com/kahst/BirdCLEF-Baseline)
+<b>You can download our paper here:</b> [https://arxiv.org/abs/1804.07177](https://arxiv.org/abs/1804.07177)
 
 ## Installation
 This is a Thenao/Lasagne implementation in Python 2.7 for the identification of hundreds of bird species based on their vocalizations. This code is tested using Ubuntu 16.04 LTS but should work with other distributions as well.
