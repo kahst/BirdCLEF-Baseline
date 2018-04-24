@@ -138,8 +138,8 @@ MAX_POOLING = True
 
 # Specify the type of dropout
 # 'random': Standard dropout of random pixels per channel
-# 'location': Dropout same pixels across all channels
-# 'channel': Dropout of entire channels
+# 'locations': Dropout same pixels across all channels
+# 'channels': Dropout of entire channels
 DROPOUT_TYPE = 'random'
 
 # Dropout probability (higher == more regularization)
