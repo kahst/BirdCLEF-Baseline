@@ -102,8 +102,8 @@ def build_model():
         # Dropout Layer (we support different types of dropout)
         if cfg.DROPOUT_TYPE == 'channels':
             net = l.dropout_channels(net, p=cfg.DROPOUT)
-        elif cfg.DROPOUT_TYPE == 'location':
-            net = l.dropout_location(net, p=cfg.DROPOUT)
+        elif cfg.DROPOUT_TYPE == 'locations':
+            net = l.dropout_locations(net, p=cfg.DROPOUT)
         else:
             net = l.DropoutLayer(net, p=cfg.DROPOUT)
         
