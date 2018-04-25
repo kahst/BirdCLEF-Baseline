@@ -46,6 +46,8 @@ def normalize(img, zero_center=False):
     if not img.min() == 0 and not img.max() == 0:
         img -= img.min()
         img /= img.max()
+    else:
+        img = img.clip(0, 1)
 
     # Use values between -1 and 1
     if zero_center:
@@ -321,7 +323,7 @@ def mean(img, normalize=True):
 
     img = substractMean(img, True)
 
-    if normalize:
+    if normalize and not img.max() == 0:
         img /= img.max()
 
     return img
@@ -403,8 +405,12 @@ def add(img, items):
     img2 = openImage(items[index], cfg.IM_DIM)
     img2 = resize(img2, img.shape[1], img.shape[0])
 
+    # Generate random weights
+    w1 = RANDOM.uniform(1, 2)
+    w2 = RANDOM.uniform(1, 2)
+
     # Add images and calculate average
-    img = (img + img2) / 2.0
+    img = (img * w1 + img2 * w2) / (w1 + w2)
 
     return img
 
