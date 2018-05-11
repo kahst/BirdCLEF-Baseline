@@ -20,8 +20,10 @@ def getRandomState():
 TRAINSET_PATH = 'datasets/TrainingSet/'
 DATASET_PATH = os.path.join(TRAINSET_PATH, 'spec')
 NOISE_PATH = os.path.join(TRAINSET_PATH, 'noise')
-TESTSET_PATH = os.path.join(TRAINSET_PATH, 'val')
 METADATA_PATH = os.path.join(TRAINSET_PATH, 'metadata')
+
+# Set this path to 'val', 'BirdCLEF2018MonophoneTest' or 'BirdCLEF2018SoundscapesTest' depending on which dataset you want to analyze
+TESTSET_PATH = os.path.join(TRAINSET_PATH, 'val')
 
 # Define if you want to 'copy', 'move' or 'symlink' audio files
 # If you use 'symlink' make sure your OS does support symbolic links and define TRAINSET_PATH absolute
@@ -29,6 +31,9 @@ SORT_MODE = 'copy'
 
 # Maximum number of classes to use (None = no limit)
 MAX_CLASSES = None
+
+# Use this whitelist to pre-select species; leave the list empty if you want to include all species
+CLASS_WHITELIST = []
 
 # If not sorted, using only a subset of classes (MAX_CLASSES) will select classes randomly
 SORT_CLASSES_ALPHABETICALLY = False  
@@ -38,23 +43,26 @@ MIN_SAMPLES_PER_CLASS = -1   # -1 = no minimum
 MAX_SAMPLES_PER_CLASS = None # None = no limit
 
 # Specify the signal-to-noise interval you want to pick samples from (filename contains value)
-S2N_INTERVAL = [50, 1200]
+S2N_INTERVAL = [50, 2500]
 
 # Size of validation split (0.05 = 5%)
 VAL_SPLIT = 0.05
 
 ######################  SPECTROGRAMS  ######################
 
+# Type of frequency scaling, mel-scale = 'melspec', linear scale = 'linear'
+SPEC_TYPE = 'melspec'
+
 # Sample rate for recordings, other sampling rates will force re-sampling
 SAMPLE_RATE = 44100
 
 # Specify min and max frequency for low and high pass
-SPEC_FMIN = 300
+SPEC_FMIN = 500
 SPEC_FMAX = 15000
 
 # Define length of chunks for spec generation, overlap of chunks and chunk min length
 SPEC_LENGTH = 1.0
-SPEC_OVERLAP = 0.25
+SPEC_OVERLAP = 0.0
 SPEC_MINLEN = 1.0
 
 # Threshold for distinction between noise and signal
@@ -89,7 +97,7 @@ else:
 
 # Image augmentation, uncomment to use; specify mode + value
 IM_AUGMENTATION = {#'roll_h':0.5,                   # Horizontal roll
-                   'roll_v':0.1,                    # Vertical roll
+                   'roll_v':0.15,                   # Vertical roll
                    #'crop':[0.1, 0.0, 0.05, 0.0],   # Random crop - top, left, bottom, right
                    #'noise':0.05,                   # Gaussian noise
                    'add':NOISE_SAMPLES,             # List of specs to add to original sample
@@ -113,17 +121,18 @@ AUGMENTATION_PROBABILITY = 0.5
 #########################  MODEL  #########################
 
 # Changing model settings can have great impact on both, training time and accuracy
-# We are using a custom architecture with only a few layers and no shortcuts
+# We are currently supporting three models 'Baseline', 'ResNet' and 'Pi'
 # You can find more Lasagne model implementations here: https://github.com/Lasagne/Recipes/tree/master/modelzoo
+MODEL_TYPE = 'ResNet'
 
 # Options are: relu, lrelu (leaky relu), vlrelu (very leaky relu), elu and identity
 NONLINEARITY = 'relu'
 
-# Number of filters in each convolutional layer group
-# You can change the number of groups by changing the amount of
+# Number of filters in each convolutional layer group or resblock
+# You can change the number of groups or resblocks by changing the amount of
 # values in the array (adjust KERNEL_SIZES accordingly!)
-# 5 values == 5 convolutional groups
-FILTERS = [64, 128, 256, 512, 1024]
+# 5 values == 5 convolutional groups or resblocks
+FILTERS = [16, 32, 64, 128]
 
 # Size of kernels in each convolution (we use 'same' padding)
 KERNEL_SIZES = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
@@ -134,16 +143,23 @@ NUM_OF_GROUPS = [1, 1, 1, 1, 1]
 BATCH_NORM = True
 
 # Reduce spatial dimension with MaxPooling (True) or strided convolutions (False)
-MAX_POOLING = True
+MAX_POOLING = False
+
+# Number of dense units for PiNet
+DENSE_UNITS = 512
 
 # Specify the type of dropout
 # 'random': Standard dropout of random pixels per channel
-# 'locations': Dropout same pixels across all channels
-# 'channels': Dropout of entire channels
+# 'location': Dropout same pixels across all channels
+# 'channel': Dropout of entire channels
 DROPOUT_TYPE = 'random'
 
 # Dropout probability (higher == more regularization)
 DROPOUT = 0.0
+
+# ResNet-specific settings
+RESNET_K = 2 # Filter multiplier
+RESNET_N = 2 # Number of ResBlocks in one ResStack
 
 #######################  MODEL I/O ########################
 
@@ -154,15 +170,18 @@ RUN_NAME = 'BirdCLEF_TUC_CLO_EXAMPLE'
 MODEL_PATH = 'snapshots/'
 
 # Filename of .pkl-file to load pre-trained model from (default = None, has to be the 'model_params'-file)
-PRETRAINED_MODEL_NAME = None # e.g. 'BirdCLEF_TUC_CLO_EXAMPLE_model_params_epoch_50.pkl'
+PRETRAINED_MODEL_NAME = None
 
 # If the output size of the pre-trained model differs from the current model, set flag to False
-LOAD_OUTPUT_LAYER = False
+LOAD_OUTPUT_LAYER = True
+
+# Define list of models (.pkl-files) which serve as teacher during model distillation ([] = no teacher)
+TEACHER = []
 
 #######################  TRAINING  ########################
 
 # Number of epochs to train
-EPOCHS = 100
+EPOCHS = 60
 
 # Start epoch, important if you use a pre-trained model to continue training
 EPOCH_START = 1
@@ -185,7 +204,7 @@ L2_WEIGHT = 0
 OPTIMIZER = 'adam'
 
 # Epochs between snapshot save
-SNAPSHOT_EPOCHS = 5
+SNAPSHOT_EPOCHS = 1
 
 # Epochs to wait before early stopping
 EARLY_STOPPING_WAIT = 10
@@ -195,19 +214,22 @@ EARLY_STOPPING_WAIT = 10
 # .pkl file of model to test (not the params-file)
 # You can specify a list of .pkl-files to test ensembles
 # All models in an ensemble must contain the same CLASSES!
-TEST_MODELS = None # e.g. ['BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl']
+TEST_MODELS = []
 
 # Maximum amount of randomly selected files from the local validation set (None = no limit)
-MAX_TEST_FILES = None
+MAX_TEST_FILES = 500
 
 # Limit the amount of test files per class
 MAX_TEST_SAMPLES_PER_CLASS = -1
 
 # Limit the amount of (randomly) extracted specs per file (GPU memory!)
-MAX_SPECS_PER_FILE = 64
+MAX_SPECS_PER_FILE = 128
 
 # Include background species in metric (labels need to be sci-names)
 TEST_WITH_BG_SPECIES = True
+
+# Number of predictions for soundscape interval (SPEC_LENGTH = 1.0 means we need 5 as intervals must be 5 seconds long)
+SPECS_PER_PREDICTION = 5
 
 ####################  STATS AND LOG  ######################
 
