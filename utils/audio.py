@@ -61,6 +61,8 @@ def melspec(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True, p
     # Convert power spec to dB scale (compute dB relative to peak power)
     melspec = librosa.power_to_db(melspec, ref=np.max, top_db=100)
 
+    melspec = librosa.feature.mfcc(S=melspec, n_mfcc=shape[0])
+
     # Flip spectrum vertically (only for better visialization, low freq. at bottom)
     melspec = melspec[::-1, ...]
 
@@ -73,6 +75,56 @@ def melspec(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True, p
         melspec /= melspec.max()
 
     return melspec.astype('float32')
+
+def stft(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True):
+
+    # shape = (height, width) in pixels
+
+    # STFT-Spec parameters
+    N_FFT = int((rate * shape[0] * 2) / abs(fmax - fmin)) + 1
+    P_MIN = int(float(N_FFT / 2) / rate * fmin) + 1
+    P_MAX = int(float(N_FFT / 2) / rate * fmax) + 1    
+    HOP_LEN = len(sig) // (shape[1] - 1)
+
+    # Librosa stft-spectrum
+    spec = librosa.core.stft(sig, hop_length=HOP_LEN, n_fft=N_FFT, window='hamm')
+
+    # Convert power spec to dB scale (compute dB relative to peak power)
+    spec = librosa.amplitude_to_db(librosa.core.magphase(spec)[0], ref=np.max, top_db=80)
+
+    # Trim to desired shape using cutoff frequencies
+    spec = spec[P_MIN:P_MAX, :shape[1]]
+
+    # Flip spectrum vertically (only for better visialization, low freq. at bottom)
+    spec = spec[::-1, ...]    
+
+    # Normalize values between 0 and 1
+    if normalize:
+        spec -= spec.min()
+        spec /= spec.max()    
+    
+    return spec.astype('float32')
+
+def mfcc(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True):
+
+    mfcc = librosa.feature.mfcc(sig, rate, n_mfcc=shape[0])
+    print mfcc.shape
+
+    # Normalize values between 0 and 1
+    if normalize:
+        mfcc -= mfcc.min()
+        mfcc /= mfcc.max() 
+    
+    return mfcc
+
+def get_spec(sig, rate, shape, spec_type='linear', **kwargs):
+
+    if spec_type.lower()== 'melspec':
+        return melspec(sig, rate, shape, **kwargs)
+    elif spec_type.lower()== 'mfcc':
+        return mfcc(sig, rate, shape, **kwargs)
+    else:
+        return stft(sig, rate, shape, **kwargs)
 
 def signal2noise(spec):
 
@@ -114,7 +166,7 @@ def specsFromSignal(sig, rate, shape, seconds, overlap, minlen, **kwargs):
     for sig in sig_splits:
 
         # Get spec for signal chunk
-        spec = melspec(sig, rate, shape, **kwargs)
+        spec = get_spec(sig, rate, shape, **kwargs)
 
         yield spec
 
@@ -129,17 +181,42 @@ def specsFromFile(path, rate, seconds, overlap, minlen, shape, start=-1, end=-1,
         minlen = 0
 
     # Yield all specs for file
-    for mspec in specsFromSignal(sig, rate, shape, seconds, overlap, minlen, **kwargs):
-        yield mspec
+    for spec in specsFromSignal(sig, rate, shape, seconds, overlap, minlen, **kwargs):
+        yield spec
     
 if __name__ == '__main__':
 
-    for spec in specsFromFile('../example/Acadian Flycatcher.wav', 44100, 1, 0, 1, shape=(128, 256), fmin=300, fmax=15000):
+    
+    for spec in specsFromFile('../example/Acadian Flycatcher.wav',
+                              rate=48000,
+                              seconds=1,
+                              overlap=0,
+                              minlen=1,
+                              shape=(128, 256),
+                              fmin=500,
+                              fmax=22500,
+                              spec_type='melspec'):
+
+        # Calculate and show noise measure
+        #noise = signal2noise(spec)
+        #print noise
 
         # Show spec and wait for enter key
         cv2.imshow('SPEC', spec)
         cv2.waitKey(-1)
 
+    """
+    import os
+    for img_path in sorted(os.listdir('../example/birdclef/')):
+
+        print '../example/birdclef/' + img_path
+        spec = cv2.imread('../example/birdclef/' + img_path, 1)
+        spec = np.asarray(spec / 255., dtype='float32')
         # Calculate and show noise measure
         noise = signal2noise(spec)
         print noise
+        cv2.imshow('SPEC', spec)
+        cv2.waitKey(-1)
+
+    """
+        
