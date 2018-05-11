@@ -27,6 +27,8 @@ Please cite the paper in your publications if the repository helps your research
 
 <b>You can download our paper here:</b> [https://arxiv.org/abs/1804.07177](https://arxiv.org/abs/1804.07177)
 
+<i>Score update: We now achive a MLRAP score of 0.61 for a single model and 0.72 for an ensemble on the local validation set with the latest updates using different architectures (e.g. ResNet) and dataset compilations.</i>
+
 ## Installation
 This is a Thenao/Lasagne implementation in Python 2.7 for the identification of hundreds of bird species based on their vocalizations. This code is tested using Ubuntu 16.04 LTS but should work with other distributions as well.
 
@@ -55,7 +57,7 @@ You need to register for the challenges to access the data. After download, you 
 
 ## Workflow
 
-Our workflow consists of four main phases: First, we need to <b>sort the BirdCLEF training data</b>. Secondly, we <b>extract spectrograms</b> from audio recordings. Thirdly, we <b>train a deep neural net</b> based on the resulting spectrograms - we treat the audio classification task as an image processing problem. Finally, we <b>test the trained net</b> given a local validation set of unseen audio recordings.
+Our workflow consists of four main phases: First, we need to <b>sort the BirdCLEF training data</b>. Secondly, we <b>extract spectrograms</b> from audio recordings. Thirdly, we <b>train a deep neural net</b> based on the resulting spectrograms - we treat the audio classification task as an image processing problem. Finally, we <b>test the trained net</b> given a local validation set of unseen audio recordings. We also support the final submission format - you can build a valid submission after training.
 
 ### Sorting the data
 
@@ -111,8 +113,9 @@ You can run the script `spec.py` to start the extraction - this might take a whi
 The `config.py` contains a section with all important settings, like sample rate, chunk length and cut-off frequencies. We are using these settinsg as defaults:
 
 ```
+SPEC_TYPE = 'melspec'
 SAMPLE_RATE = 44100
-SPEC_FMIN = 300
+SPEC_FMIN = 500
 SPEC_FMAX = 15000
 SPEC_LENGTH = 1.0
 SPEC_OVERLAP = 0.25
@@ -120,7 +123,7 @@ SPEC_MINLEN = 1.0
 SPEC_SIGNAL_THRESHOLD = 0.001
 ```
 
-Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `300 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction.
+Most monophonic recordings from the BirdCLEF dataset are sampled at `44.1 kHz`, we use a low-pass and high-pass filter at `15 kHz` and `500 Hz`. Our signal chunks are of `1 s` length - you can use any other chunk length if you like. The `SPEC_OVERLAP` value defines the step width for extraction, consecutive spectrograms are overlapping by the defined amount. The `SPEC_MINLEN` value excludes all chunks shorter than `1 s` from the extraction. We support linear and mel-scale spectrograms.
 
 Our rule-based spectrogram analysis rejects samples, which do not contain any bird sounds. It also estimates the signal-to-noise ratio based on some simple calculations. The rejection threshold is set through the `SPEC_SIGNAL_THRESHOLD` value and will be preserved in the filename of the saved spectrogram file.
 
@@ -151,13 +154,18 @@ When finished (this might take a looooong time), you can find the best model in 
 
 We already created a local validation split with `sort_data.py`. We now make use of those unseen recordings and assess the performance of the best snapshot from training (e.g. `TEST_MODEL = 'BirdCLEF_TUC_CLO_EXAMPLE_model_epoch_50.pkl'`). 
 
-Testing includes the spectrogram extraction for each test recording (specify how many specs to use with `MAX_SPECS_PER_FILE`) and the prediction of class scores for each segment. Finally, we calculate the global score for the entire recording by pooling individual scores of all specs. We use <b>Mean Exponential Pooling</b> for that - you can change the pooling strategy in the `test.py` by adjusting this line: 
+Testing includes the spectrogram extraction for each test recording (specify how many specs to use with `MAX_SPECS_PER_FILE`) and the prediction of class scores for each segment. Finally, we calculate the global score for the entire recording by pooling individual scores of all specs. We use <b>Median Filtered Pooling</b> for that - you can change the pooling strategy in the `test.py` by adjusting this lines: 
 
 ```
+row_median = np.median(p, axis=1, keepdims=True)
+p[p < row_median * 1.5] = 0.0
 p_pool = np.mean((p * 2) ** 2, axis=0)
+p_pool -= p_pool.min()
+if p_pool.max() > 1.0:
+    p_pool /= p_pool.max()
 ```
 
-The local validation split from our baseline approach contains 4399 recordings - 10% of the entire training set but at least one recording per species. The metric we use is called <b>Mean Label Ranking Average Precision</b> (MLRAP) and our best net scores a MLRAP of 0.000 including background species (`TEST_WITH_BG_SPECIES = True`).
+The local validation split from our baseline approach contains 4399 recordings - 10% of the entire training set but at least one recording per species. The metric we use is called <b>Mean Label Ranking Average Precision</b> (MLRAP) and our best net scores a MLRAP of 0.612 including background species (`TEST_WITH_BG_SPECIES = True`).
 
 <b>The results are competitive, but still - there is a lot of room for improvements :)</b>
 
@@ -165,9 +173,13 @@ The local validation split from our baseline approach contains 4399 recordings -
 
 If you want to experiment with the system and evaluate different settings or CNN layouts, you can simply change some values in the `config.py` and run the script `evaluate.py`. This will automatically run the training, save a snapshot and test the trained model using the local validation split. All you have to do is sit and wait for a couple of hours :)
 
+### Model Distillation
+
+We support model distillation which allows to compress ('distill') large models or ensembles into smaller models with less parameters. All you need to do is to define a `TEACHER` model (or a list of models) and we will use the teacher predictions as ground truth during training instead of the binary, one-hot targets.
+
 ### Submission
 
-We will soon provide the code that you can use to generate a valid submission for the monophone task...
+You can use our code to build a valid BirdCLEF sumbission for bith tasks - monophone and soundscape. Use the script `submission_monophone.py` and `submission_soundscape.py` after training. You need to specify one or more `TEST_MODELS` and you have to adjust the `TESTSET_PATH` and change it to the individual monophonic and soundscape test paths.
 
 <i><b>Note:</b> You will need to download the test data available from <b>crowdai.org</b>, first.</i>
 
