@@ -24,23 +24,23 @@ def getSpecs(path):
     noise = []
 
     # Get mel-specs for file
-    for mspec in audio.specsFromFile(path,
-                                     rate=cfg.SAMPLE_RATE,
-                                     seconds=cfg.SPEC_LENGTH,
-                                     overlap=cfg.SPEC_OVERLAP,
-                                     minlen=cfg.SPEC_MINLEN,
-                                     fmin=cfg.SPEC_FMIN,
-                                     fmax=cfg.SPEC_FMAX,
-                                     shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0])):
+    for spec in audio.specsFromFile(path,
+                                    rate=cfg.SAMPLE_RATE,
+                                    seconds=cfg.SPEC_LENGTH,
+                                    overlap=cfg.SPEC_OVERLAP,
+                                    minlen=cfg.SPEC_MINLEN,
+                                    fmin=cfg.SPEC_FMIN,
+                                    fmax=cfg.SPEC_FMAX,
+                                    spec_type=cfg.SPEC_TYPE,
+                                    shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0])):
 
         # Determine signal to noise ratio
-        s2n = audio.signal2noise(mspec)
-        specs.append(mspec)
+        s2n = audio.signal2noise(spec)
+        specs.append(spec)
         noise.append(s2n)
 
     # Shuffle arrays (we want to select randomly later)
-    specs = shuffle(specs, random_state=RANDOM)
-    noise = shuffle(noise, random_state=RANDOM)
+    specs, noise = shuffle(specs, noise, random_state=RANDOM)
 
     return specs, noise
 
@@ -92,8 +92,8 @@ def parseDataset():
                     else:
 
                         # Create target path for rejected specs -
-                        # but we don't want to save every sample
-                        if RANDOM.choice([True, False], p=[0.01, 0.99]):
+                        # but we don't want to save every sample (only 10%)
+                        if RANDOM.choice([True, False], p=[0.1, 0.90]):
                             filepath = os.path.join(cfg.NOISE_PATH)
                             if not os.path.exists(filepath):
                                 os.makedirs(filepath)
