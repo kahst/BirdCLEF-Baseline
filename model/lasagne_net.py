@@ -65,10 +65,11 @@ def initialization(name):
 
     return initializations[name]
 
-################## BUILDING THE MODEL ###################
-def build_model():
 
-    log.i('BUILDING MODEL...')
+#################### BASELINE MODEL #####################
+def build_baseline_model():
+
+    log.i('BUILDING BASELINE MODEL...')
 
     # Random Seed
     lasagne_random.set_rng(cfg.getRandomState())
@@ -100,11 +101,11 @@ def build_model():
             net = l.MaxPool2DLayer(net, pool_size=2)
 
         # Dropout Layer (we support different types of dropout)
-        if cfg.DROPOUT_TYPE == 'channels':
+        if cfg.DROPOUT_TYPE == 'channels' and cfg.DROPOUT > 0.0:
             net = l.dropout_channels(net, p=cfg.DROPOUT)
-        elif cfg.DROPOUT_TYPE == 'locations':
-            net = l.dropout_locations(net, p=cfg.DROPOUT)
-        else:
+        elif cfg.DROPOUT_TYPE == 'location' and cfg.DROPOUT > 0.0:
+            net = l.dropout_location(net, p=cfg.DROPOUT)
+        elif cfg.DROPOUT > 0.0:
             net = l.DropoutLayer(net, p=cfg.DROPOUT)
         
         log.i(('\tGROUP', i + 1, 'OUT SHAPE:', l.get_output_shape(net)))
@@ -133,6 +134,134 @@ def build_model():
     log.i(("MODEL HAS", l.count_params(net), "PARAMS"))
 
     return net
+
+##################### WIDE RESNET #######################
+def resblock(net_in, filters, kernel_size, stride=1, num_groups=1, preactivated=True):
+
+    # Preactivation
+    net_pre = batch_norm(net_in)
+    net_pre = l.NonlinearityLayer(net_pre, nonlinearity=nonlinearity(cfg.NONLINEARITY))
+
+    # Preactivated shortcut?
+    if preactivated:
+        net_sc = net_pre
+    else:
+        net_sc = net_in
+
+    # Stride size
+    if cfg.MAX_POOLING:
+        s = 1
+    else:
+        s = stride
+
+    # First Convolution (alwys has preactivated input)      
+    net = batch_norm(l.Conv2DLayer(net_pre,
+                                   num_filters=filters,
+                                   filter_size=kernel_size,
+                                   pad='same',
+                                   stride=s,
+                                   num_groups=num_groups,
+                                   W=initialization(cfg.NONLINEARITY),
+                                   nonlinearity=nonlinearity(cfg.NONLINEARITY)))
+    
+    # Optional pooling layer
+    if cfg.MAX_POOLING and stride > 1:
+        net = l.MaxPool2DLayer(net, pool_size=stride)
+
+    # Dropout Layer (we support different types of dropout)
+    if cfg.DROPOUT_TYPE == 'channels' and cfg.DROPOUT > 0.0:
+        net = l.dropout_channels(net, p=cfg.DROPOUT)
+    elif cfg.DROPOUT_TYPE == 'location' and cfg.DROPOUT > 0.0:
+        net = l.dropout_location(net, p=cfg.DROPOUT)
+    elif cfg.DROPOUT > 0.0:
+        net = l.DropoutLayer(net, p=cfg.DROPOUT)
+
+    # Second Convolution
+    net = l.Conv2DLayer(net,
+                        num_filters=filters,
+                        filter_size=kernel_size,
+                        pad='same',
+                        stride=1,
+                        num_groups=num_groups,
+                        W=initialization(cfg.NONLINEARITY),
+                        nonlinearity=None)
+
+    # Shortcut Layer
+    if not l.get_output_shape(net) == l.get_output_shape(net_sc):        
+        shortcut = l.Conv2DLayer(net_sc,
+                                 num_filters=filters,
+                                 filter_size=1,
+                                 pad='same',
+                                 stride=s,
+                                 W=initialization(cfg.NONLINEARITY),
+                                 nonlinearity=None,
+                                 b=None)
+        
+        # Optional pooling layer
+        if cfg.MAX_POOLING and stride > 1:
+            shortcut = l.MaxPool2DLayer(shortcut, pool_size=stride)
+    else:
+        shortcut = net_sc
+    
+    # Merge Layer
+    out = l.ElemwiseSumLayer([net, shortcut])
+
+    return out
+
+def build_resnet_model():
+
+    log.i('BUILDING RESNET MODEL...')
+
+    # Random Seed
+    lasagne_random.set_rng(cfg.getRandomState())
+
+    # Input layer for images
+    net = l.InputLayer((None, cfg.IM_DIM, cfg.IM_SIZE[1], cfg.IM_SIZE[0]))
+
+    # First Convolution
+    net = l.Conv2DLayer(net,
+                        num_filters=cfg.FILTERS[0],
+                        filter_size=cfg.KERNEL_SIZES[0],
+                        pad='same',
+                        W=initialization(cfg.NONLINEARITY),
+                        nonlinearity=None)
+    
+    log.i(("\tFIRST CONV OUT SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net)) - 1))
+
+    # Residual Stacks
+    for i in range(0, len(cfg.FILTERS)):
+        net = resblock(net, filters=cfg.FILTERS[i] * cfg.RESNET_K, kernel_size=cfg.KERNEL_SIZES[i], stride=2, num_groups=cfg.NUM_OF_GROUPS[i])
+        for _ in range(1, cfg.RESNET_N):
+            net = resblock(net, filters=cfg.FILTERS[i] * cfg.RESNET_K, kernel_size=cfg.KERNEL_SIZES[i], num_groups=cfg.NUM_OF_GROUPS[i], preactivated=False)
+        log.i(("\tRES STACK", i + 1, "OUT SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net)) - 1))
+        
+    # Post Activation
+    net = batch_norm(net)
+    net = l.NonlinearityLayer(net, nonlinearity=nonlinearity(cfg.NONLINEARITY))
+        
+    # Pooling
+    net = l.GlobalPoolLayer(net)
+    log.i(("\tFINAL POOLING SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net)) - 1))
+
+    # Classification Layer    
+    net = l.DenseLayer(net, len(cfg.CLASSES), nonlinearity=nonlinearity('softmax'), W=initialization('softmax'))
+
+    log.i(("\tFINAL NET OUT SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net))))
+    log.i("...DONE!")
+
+    # Model stats
+    log.i(("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS"))
+    log.i(("MODEL HAS", l.count_params(net), "PARAMS"))
+
+    return net
+
+################## BUILDING THE MODEL ###################
+def build_model():
+
+    if cfg.MODEL_TYPE.lower() == 'resnet':
+        return build_resnet_model()
+    else:
+        return build_baseline_model()
 
 ######################## I/O ############################
 def loadPretrained(net):
