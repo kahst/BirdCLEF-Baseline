@@ -39,6 +39,10 @@ def showImage(img, name='IMAGE', timeout=-1):
     cv2.imshow(name, img)
     cv2.waitKey(timeout)
 
+def saveImage(img, path):
+
+    cv2.imwrite(path, img)
+
 #################### PRE-PROCESSING ######################
 def normalize(img, zero_center=False):
 
