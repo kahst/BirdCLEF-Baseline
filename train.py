@@ -22,6 +22,10 @@ from utils import log
 ################### DATASAT HANDLING ####################
 def isValidClass(c, path):
 
+    # Do we have noise samples we want to include?
+    if c in ['Noise']:
+        return True
+
     # Class in S2N interval?
     if (int(path.split('_')[0]) >= cfg.S2N_INTERVAL[0] and int(path.split('_')[0]) <= cfg.S2N_INTERVAL[1]):
         return True
@@ -34,9 +38,10 @@ def parseDataset():
     random = cfg.getRandomState()
 
     # We use subfolders as class labels
-    classes = [folder for folder in sorted(os.listdir(cfg.DATASET_PATH))]
+    classes = [folder for folder in sorted(os.listdir(cfg.DATASET_PATH)) if folder in cfg.CLASS_WHITELIST or len(cfg.CLASS_WHITELIST) == 0]
     if not cfg.SORT_CLASSES_ALPHABETICALLY:
-        classes = shuffle(classes, random_state=random)[:cfg.MAX_CLASSES]    
+        classes = shuffle(classes, random_state=random)
+    classes = classes[:cfg.MAX_CLASSES]
 
     # Now we enlist all image paths for each class
     images = []
@@ -86,7 +91,15 @@ def train(NET, TRAIN, VAL):
     # Load pretrained model
     if cfg.PRETRAINED_MODEL_NAME:
         snapshot = io.loadModel(cfg.PRETRAINED_MODEL_NAME)
-        NET = io.loadParams(NET, snapshot['params'])            
+        NET = io.loadParams(NET, snapshot['params'])
+
+    # Load teacher models
+    teach_funcs = []
+    if len(cfg.TEACHER) > 0:
+        for t in cfg.TEACHER:
+            snapshot = io.loadModel(t)
+            TEACHER = snapshot['net']
+            teach_funcs.append(birdnet.test_function(TEACHER, hasTargets=False))
 
     # Compile Theano functions
     train_net = birdnet.train_function(NET)
@@ -118,12 +131,23 @@ def train(NET, TRAIN, VAL):
             for image_batch, target_batch in bg.nextBatch(TRAIN):
 
                 # Show progress
-                stats.showProgress(epoch)                
+                stats.showProgress(epoch)
+
+                # If we have a teacher, we use that model to get new targets
+                if len(teach_funcs) > 0:
+                    target_batch = np.zeros((len(teach_funcs), target_batch.shape[0], target_batch.shape[1]), dtype='float32')
+                    for i in range(len(teach_funcs)):
+                        target_batch[i] = teach_funcs[i](image_batch)
+                    target_batch = np.mean(target_batch, axis=0)
                 
                 # Calling the training functions returns the current loss
                 loss = train_net(image_batch, target_batch, lr.dynamicLearningRate(cfg.LR_SCHEDULE, epoch))
                 stats.setValue('train loss', loss, 'append')
                 stats.setValue('batch_count', 1, 'add')
+
+                # Stop?
+                if cfg.DO_BREAK:
+                    break
 
             # Iterate over VAL batches of images
             for image_batch, target_batch in bg.nextBatch(VAL, False, True):
@@ -137,6 +161,10 @@ def train(NET, TRAIN, VAL):
 
                 # Show progress
                 stats.showProgress(epoch)
+
+                # Stop?
+                if cfg.DO_BREAK:
+                    break
 
             # Show stats for epoch
             stats.showProgress(epoch, done=True)
