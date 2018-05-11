@@ -70,17 +70,58 @@ def parseTestSet():
     return TEST
 
 ####################### TESTING #########################
+labels = []
+mdata = {}
+def applyMetadata(fname, p):
+
+    global labels
+    global mdata
+
+    if len(labels) == 0:
+        with open('labelset_latin', 'r') as lfile:
+            for line in lfile.readlines():
+                labels.append(line.replace('\r\n', '').replace('\n', ''))
+
+    if len(mdata) == 0:
+        with open('meta_prob.tsv', 'r') as mfile:
+            for line in mfile.readlines():
+                d = line.replace('\r\n', '').replace('\n', '').split('\t')
+                mdata[d[0].split(os.sep)[-1]] = d[1:]
+
+    probs = (np.array(mdata[fname], dtype='float32') + 1)
+    probs[probs >= 1.0] = 1.5
+    for i in range(len(p)):
+        if cfg.CLASSES[i] in labels:
+            p[i] *= probs[labels.index(cfg.CLASSES[i])]
+
+    return p
+
+
 def predictionPooling(p):
     
     #You can test different prediction pooling strategies here
     if p.ndim == 2:
 
-        # Mean exponential pooling gives better results for monophonic recordings
-        p_pool = np.mean((p * 2) ** 2, axis=0)
-        p_pool[p_pool > 1.0] = 1.0
+        try:
 
-        # Simple average pooling
-        #p_pool = np.mean(p, axis=0)
+            # Median filtered pooling for monophonic recordings
+            row_median = np.median(p, axis=1, keepdims=True)
+            p[p < row_median * 1.5] = 0.0
+            p_pool = np.mean((p * 2) ** 2, axis=0)
+            p_pool -= p_pool.min()
+            if p_pool.max() > 1.0:
+                p_pool /= p_pool.max()
+
+            # Mean exponential pooling for monophonic recordings
+            #p_pool = np.mean((p * 2) ** 2, axis=0)
+            #p_pool[p_pool > 1.0] = 1.0
+
+            # Simple average pooling
+            #p_pool = np.mean(p, axis=0)
+            #p_pool = sigmoid(p_pool)
+
+        except:
+            p_pool = cfg.getRandomState().normal(0.0, 1.0, (p.shape[1]))
         
     else:
         p_pool = p
@@ -106,7 +147,8 @@ def getSpecBatches(split):
                                         cfg.SPEC_MINLEN,
                                         shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0]),
                                         fmin=cfg.SPEC_FMIN,
-                                        fmax=cfg.SPEC_FMAX):
+                                        fmax=cfg.SPEC_FMAX,
+                                        spec_type=cfg.SPEC_TYPE):
 
             # Resize spec
             spec = image.resize(spec, cfg.IM_SIZE[0], cfg.IM_SIZE[1], mode=cfg.RESIZE_MODE)
@@ -155,7 +197,7 @@ def test(SNAPSHOTS):
         cfg.IM_SIZE = s['im_size']        
 
         # Compile test function
-        test_net = birdnet.test_function(NET, hasTargets=False)
+        test_net = birdnet.test_function(NET, hasTargets=False, layer_index=-1)
         test_functions.append(test_net)    
 
     # Parse Testset
@@ -181,8 +223,12 @@ def test(SNAPSHOTS):
                     prediction_batch = test_func(spec_batch)
                 else:
                     prediction_batch += test_func(spec_batch)
-            prediction_batch /= len(test_functions)            
+            prediction_batch /= len(test_functions)
 
+            # Eliminate the scores for 'Noise'
+            if 'Noise' in cfg.CLASSES:
+                prediction_batch[: , cfg.CLASSES.index('Noise')] = np.min(prediction_batch)
+            
             # Prediction pooling
             p_pool = predictionPooling(prediction_batch)
 
@@ -222,7 +268,7 @@ def test(SNAPSHOTS):
             cfg.DO_BREAK = True
             break
         except:
-            log.e('ERROR')
+            log.e('ERROR WHILE TRAINING!')
             continue
 
     # Stats
@@ -236,7 +282,7 @@ def test(SNAPSHOTS):
     return np.mean(stats.getValue('lrap')), int(np.mean(stats.getValue('time_per_file')) * 1000)
 
 if __name__ == '__main__':
-
+    
     # Load trained models
     if not isinstance(cfg.TEST_MODELS, (list, tuple)):
         cfg.TEST_MODELS = [cfg.TEST_MODELS]
@@ -245,4 +291,6 @@ if __name__ == '__main__':
         SNAPSHOTS.append(io.loadModel(test_model))    
 
     # Test snapshots
-    MLRAP = test(SNAPSHOTS)
+    MLRAP, TIME = test(SNAPSHOTS)
+    
+    
