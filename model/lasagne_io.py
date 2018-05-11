@@ -30,7 +30,7 @@ def saveModel(net, classes, epoch):
     return os.path.split(net_filename)[-1]
 
 def loadModel(filename):
-    log.i("IMPORTING MODEL...", new_line=False)
+    log.i(("IMPORTING MODEL...", filename.split(os.sep)[-1]), new_line=False)
     net_filename = cfg.MODEL_PATH + filename
 
     with open(net_filename, 'rb') as f:
@@ -63,7 +63,7 @@ def loadParams(net, params):
     if cfg.LOAD_OUTPUT_LAYER:
         l.set_all_param_values(net, params)
     else:
-        l.set_all_param_values(l.get_all_layers(net)[:-1], params[:-2])
+        l.set_all_param_values(l.get_all_layers(net)[:-2], params[:-2])
 
     log.i("DONE!")
     

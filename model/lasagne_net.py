@@ -244,9 +244,55 @@ def build_resnet_model():
     log.i(("\tFINAL POOLING SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net)) - 1))
 
     # Classification Layer    
-    net = l.DenseLayer(net, len(cfg.CLASSES), nonlinearity=nonlinearity('softmax'), W=initialization('softmax'))
+    net = l.DenseLayer(net, len(cfg.CLASSES), nonlinearity=nonlinearity('identity'), W=initialization('identity'))
+    net = l.NonlinearityLayer(net, nonlinearity=nonlinearity('softmax'))
 
     log.i(("\tFINAL NET OUT SHAPE:", l.get_output_shape(net), "LAYER:", len(l.get_all_layers(net))))
+    log.i("...DONE!")
+
+    # Model stats
+    log.i(("MODEL HAS", (sum(hasattr(layer, 'W') for layer in l.get_all_layers(net))), "WEIGHTED LAYERS"))
+    log.i(("MODEL HAS", l.count_params(net), "PARAMS"))
+
+    return net
+
+################## PASPBERRY PI NET #####################
+def build_pi_model():
+
+    log.i('BUILDING RASBPERRY PI MODEL...')
+
+    # Random Seed
+    lasagne_random.set_rng(cfg.getRandomState())
+
+    # Input layer for images
+    net = l.InputLayer((None, cfg.IM_DIM, cfg.IM_SIZE[1], cfg.IM_SIZE[0]))
+
+    # Convolutinal layer groups
+    for i in range(len(cfg.FILTERS)):
+        
+        # 3x3 Convolution + Stride
+        net = batch_norm(l.Conv2DLayer(net,
+                                       num_filters=cfg.FILTERS[i],
+                                       filter_size=cfg.KERNEL_SIZES[i],
+                                       num_groups=cfg.NUM_OF_GROUPS[i],
+                                       pad='same',
+                                       stride=2,
+                                       W=initialization(cfg.NONLINEARITY),
+                                       nonlinearity=nonlinearity(cfg.NONLINEARITY)))
+        
+        log.i(('\tGROUP', i + 1, 'OUT SHAPE:', l.get_output_shape(net)))
+        
+    # Fully connected layers + dropout layers
+    net = l.DenseLayer(net, cfg.DENSE_UNITS, nonlinearity=nonlinearity(cfg.NONLINEARITY), W=initialization(cfg.NONLINEARITY))    
+    net = l.DropoutLayer(net, p=cfg.DROPOUT)
+    
+    net = l.DenseLayer(net, cfg.DENSE_UNITS, nonlinearity=nonlinearity(cfg.NONLINEARITY), W=initialization(cfg.NONLINEARITY))        
+    net = l.DropoutLayer(net, p=cfg.DROPOUT)
+    
+    # Classification Layer (Softmax)
+    net = l.DenseLayer(net, len(cfg.CLASSES), nonlinearity=nonlinearity('softmax'), W=initialization('softmax'))
+    
+    log.i(("\tFINAL NET OUT SHAPE:", l.get_output_shape(net)))
     log.i("...DONE!")
 
     # Model stats
@@ -260,6 +306,8 @@ def build_model():
 
     if cfg.MODEL_TYPE.lower() == 'resnet':
         return build_resnet_model()
+    elif cfg.MODEL_TYPE.lower() == 'pi':
+        return build_pi_model()
     else:
         return build_baseline_model()
 
@@ -352,12 +400,12 @@ def train_function(net):
     return train_net
 
 ################# PREDICTION FUNCTION ####################
-def test_function(net, hasTargets=True):    
+def test_function(net, hasTargets=True, layer_index=-1):    
 
     # We need the prediction function to calculate the validation accuracy
     # this way we can test the net during/after training
     # We need a version with targets and one without
-    prediction = l.get_output(net, deterministic=True)
+    prediction = l.get_output(l.get_all_layers(net)[layer_index], deterministic=True)
 
     log.i("COMPILING TEST FUNCTION...", new_line=False)
     start = time.time()
