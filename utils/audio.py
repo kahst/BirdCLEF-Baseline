@@ -1,7 +1,3 @@
-# This file includes basic functionality for audio signal processing
-# including audio file handling, signal splitting and spectrogram extraction
-# Author: Stefan Kahl, 2018, Chemnitz University of Technology
-
 import os
 
 import numpy as np
@@ -56,12 +52,10 @@ def melspec(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True, p
         sig = np.append(sig[0], sig[1:] - preemphasis * sig[:-1])
 
     # Librosa mel-spectrum
-    melspec = librosa.feature.melspectrogram(y=sig, sr=SAMPLE_RATE, hop_length=HOP_LEN, n_fft=N_FFT, n_mels=N_MELS, fmax=FMAX, fmin=FMIN, power=2.0)
+    melspec = librosa.feature.melspectrogram(y=sig, sr=SAMPLE_RATE, hop_length=HOP_LEN, n_fft=N_FFT, n_mels=N_MELS, fmax=FMAX, fmin=FMIN, power=1.0)
     
     # Convert power spec to dB scale (compute dB relative to peak power)
-    melspec = librosa.power_to_db(melspec, ref=np.max, top_db=100)
-
-    melspec = librosa.feature.mfcc(S=melspec, n_mfcc=shape[0])
+    melspec = librosa.amplitude_to_db(melspec, ref=np.max, top_db=80)
 
     # Flip spectrum vertically (only for better visialization, low freq. at bottom)
     melspec = melspec[::-1, ...]
@@ -72,7 +66,10 @@ def melspec(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True, p
     # Normalize values between 0 and 1
     if normalize:
         melspec -= melspec.min()
-        melspec /= melspec.max()
+        if not melspec.max() == 0:
+            melspec /= melspec.max()
+        else:
+            mlspec = np.clip(melspec, 0, 1)
 
     return melspec.astype('float32')
 
@@ -101,28 +98,17 @@ def stft(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True):
     # Normalize values between 0 and 1
     if normalize:
         spec -= spec.min()
-        spec /= spec.max()    
+        if not spec.max() == 0:
+            spec /= spec.max()
+        else:
+            spec = np.clip(spec, 0, 1)    
     
     return spec.astype('float32')
-
-def mfcc(sig, rate, shape=(128, 256), fmin=500, fmax=15000, normalize=True):
-
-    mfcc = librosa.feature.mfcc(sig, rate, n_mfcc=shape[0])
-    print mfcc.shape
-
-    # Normalize values between 0 and 1
-    if normalize:
-        mfcc -= mfcc.min()
-        mfcc /= mfcc.max() 
-    
-    return mfcc
 
 def get_spec(sig, rate, shape, spec_type='linear', **kwargs):
 
     if spec_type.lower()== 'melspec':
         return melspec(sig, rate, shape, **kwargs)
-    elif spec_type.lower()== 'mfcc':
-        return mfcc(sig, rate, shape, **kwargs)
     else:
         return stft(sig, rate, shape, **kwargs)
 
@@ -198,25 +184,9 @@ if __name__ == '__main__':
                               spec_type='melspec'):
 
         # Calculate and show noise measure
-        #noise = signal2noise(spec)
-        #print noise
+        noise = signal2noise(spec)
+        print noise
 
         # Show spec and wait for enter key
         cv2.imshow('SPEC', spec)
         cv2.waitKey(-1)
-
-    """
-    import os
-    for img_path in sorted(os.listdir('../example/birdclef/')):
-
-        print '../example/birdclef/' + img_path
-        spec = cv2.imread('../example/birdclef/' + img_path, 1)
-        spec = np.asarray(spec / 255., dtype='float32')
-        # Calculate and show noise measure
-        noise = signal2noise(spec)
-        print noise
-        cv2.imshow('SPEC', spec)
-        cv2.waitKey(-1)
-
-    """
-        
