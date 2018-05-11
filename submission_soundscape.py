@@ -1,5 +1,5 @@
 # This file contains all submission functionality for
-# the monophonic test data.
+# the soundscape test data.
 # Author: Stefan Kahl, 2018, Chemnitz University of Technology
 
 import os
@@ -17,14 +17,12 @@ from utils import image
 from utils import batch_generator as bg
 from utils import log 
 
-################### DATASAT HANDLING ####################
 def parseTestSet():
 
     # Status
     log.i('PARSING TEST SET...', new_line=False)
     t = []
 
-    # Get all sound files
     wav_files = [os.path.join(cfg.TESTSET_PATH, f) for f in sorted(os.listdir(cfg.TESTSET_PATH)) if os.path.splitext(f)[1] in ['.wav']]
 
     # Parse files
@@ -46,14 +44,87 @@ def parseTestSet():
 
     return t, codes, labels
 
+def getTimestamp(start, end):
+
+    m_s, s_s = divmod(start, 60)
+    h_s, m_s = divmod(m_s, 60)
+    start = str(h_s).zfill(2) + ":" + str(m_s).zfill(2) + ":" + str(s_s).zfill(2)
+
+    m_e, s_e = divmod(end, 60)
+    h_e, m_e = divmod(m_e, 60)
+    end = str(h_e).zfill(2) + ":" + str(m_e).zfill(2) + ":" + str(s_e).zfill(2)
+
+    return start + '-' + end
+
 def getClassId(c):
 
     if c in LABELS:
         return CODES[LABELS.index(c)]
     else:
         print 'MISSING CLASS:', c
-        return False       
-    
+        return False
+
+def getSpecBatches(split):
+
+    # Random Seed
+    random = cfg.getRandomState()
+
+    # Make predictions for every testfile
+    for t in split:
+
+        # Spec batch
+        spec_batch = []
+
+        # Keep track of timestamps
+        pred_start = 0
+
+        # Get specs for file
+        for spec in audio.specsFromFile(t[0],
+                                        cfg.SAMPLE_RATE,
+                                        cfg.SPEC_LENGTH,
+                                        cfg.SPEC_OVERLAP,
+                                        cfg.SPEC_MINLEN,
+                                        shape=(cfg.IM_SIZE[1], cfg.IM_SIZE[0]),
+                                        fmin=cfg.SPEC_FMIN,
+                                        fmax=cfg.SPEC_FMAX):
+
+            # Resize spec
+            spec = image.resize(spec, cfg.IM_SIZE[0], cfg.IM_SIZE[1], mode=cfg.RESIZE_MODE)
+
+            # Normalize spec
+            spec = image.normalize(spec, cfg.ZERO_CENTERED_NORMALIZATION)
+
+            # Prepare as input
+            spec = image.prepare(spec)
+
+            # Add to batch
+            if len(spec_batch) > 0:
+                spec_batch = np.vstack((spec_batch, spec))
+            else:
+                spec_batch = spec
+
+            # Batch too large?
+            if spec_batch.shape[0] >= cfg.MAX_SPECS_PER_FILE:
+                break
+
+            # Do we have enough specs for a prediction?
+            if len(spec_batch) >= cfg.SPECS_PER_PREDICTION:
+
+                # Calculate next timestamp
+                pred_end = pred_start + cfg.SPEC_LENGTH + ((len(spec_batch) - 1) * (cfg.SPEC_LENGTH - cfg.SPEC_OVERLAP))
+                
+                # Store prediction
+                ts = getTimestamp(int(pred_start), int(pred_end))
+
+                # Advance to next timestamp
+                pred_start = pred_end - cfg.SPEC_OVERLAP
+
+                yield spec_batch, t[1], ts, t[0].split(os.sep)[-1]
+
+                # Spec batch
+                spec_batch = []
+            
+
 def runTest(SNAPSHOTS, TEST):
 
     # Do we have more than one snapshot?
@@ -79,8 +150,7 @@ def runTest(SNAPSHOTS, TEST):
 
     # Make predictions
     submission = ''
-    cnt = 1
-    for spec_batch, mediaid, filename in bg.threadedGenerator(test.getSpecBatches(TEST)):
+    for spec_batch, mediaid, timestamp, filename in bg.threadedGenerator(getSpecBatches(TEST)):
 
         try:
 
@@ -111,12 +181,11 @@ def runTest(SNAPSHOTS, TEST):
             # Add scores to submission
             for i in range(min(100, len(p_sorted))):
                 if getClassId(p_sorted[i][0]):
-                    submission += mediaid + ';' + getClassId(p_sorted[i][0]) + ';' + str(p_sorted[i][1]) + ';' + str(i + 1) + '\n'
+                    submission += mediaid + ';' + timestamp + ';' + getClassId(p_sorted[i][0]) + ';' + str(p_sorted[i][1]) + '\n'
 
             # Show sample stats            
-            log.i((cnt, filename), new_line=False)
+            log.i((filename, timestamp), new_line=False)
             log.i(('TOP PREDICTION:', p_sorted[0][0], int(p_sorted[0][1] * 1000) / 10.0, '%'), new_line=True)
-            cnt += 1
 
         except KeyboardInterrupt:
             cfg.DO_BREAK = True
@@ -144,6 +213,6 @@ if __name__ == '__main__':
 
     # Write submission to file
     log.i('WRITING SUBMISSION...', new_line=False)
-    with open(cfg.RUN_NAME + '_MONOPHONE_SUBMISSION.txt', 'w') as sfile:
+    with open(cfg.RUN_NAME + '_SOUNDSCAPE_SUBMISSION.txt', 'w') as sfile:
         sfile.write(submission)    
     log.i('DONE!')
