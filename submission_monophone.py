@@ -51,7 +51,7 @@ def getClassId(c):
     if c in LABELS:
         return CODES[LABELS.index(c)]
     else:
-        print 'MISSING CLASS:', c
+        print('MISSING CLASS:', c)
         return False       
     
 def runTest(SNAPSHOTS, TEST):

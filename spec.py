@@ -66,7 +66,7 @@ def parseDataset():
             try:
 
                 # Stats
-                print i + 1, '/', len(afiles), c, afiles[i],
+                print(i + 1, '/', len(afiles), c, afiles[i],)
 
                 # Get specs and signal to noise ratios
                 specs, noise = getSpecs(os.path.join(cfg.TRAINSET_PATH, 'train', c, afiles[i]))

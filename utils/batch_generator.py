@@ -9,6 +9,7 @@ import numpy as np
 
 import config as cfg
 from utils import image
+from builtins import range
 
 RANDOM = cfg.getRandomState()
 
@@ -41,7 +42,7 @@ def loadImageAndTarget(sample, augmentation):
 def getDatasetChunk(split):
 
     #get batch-sized chunks of image paths
-    for i in xrange(0, len(split), cfg.BATCH_SIZE):
+    for i in range(0, len(split), cfg.BATCH_SIZE):
         yield split[i:i+cfg.BATCH_SIZE]
 
 def getNextImageBatch(split, augmentation=True): 

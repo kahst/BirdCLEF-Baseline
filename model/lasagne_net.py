@@ -26,7 +26,7 @@ except ImportError:
     from lasagne.layers import batch_norm as l_batch_norm 
 
 import config as cfg
-import lasagne_io as io
+from model import lasagne_io as io
 from utils import log
 
 from lasagne import random as lasagne_random
