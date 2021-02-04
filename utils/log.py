@@ -13,16 +13,16 @@ def show(s, new_line=False):
 
     if isinstance(s, (list, tuple)):
         for i in range(len(s)):
-            print s[i],
+            print(s[i])
             log += str(s[i])
             if i < len(s) - 1:
                 log += ' '
     else:
-        print s,
+        print(s)
         log += str(s)
 
     if new_line:
-        print ''
+        print('')
         log += '\n'
     else:
         log += ' '

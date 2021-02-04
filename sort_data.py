@@ -20,12 +20,12 @@ def parseDataset():
     # List of wav-files
     wav_path = os.path.join(cfg.TRAINSET_PATH, 'wav')
     wav_files = [f for f in sorted(os.listdir(wav_path))]
-    print 'DATASET CONTAINS', len(wav_files), 'WAV_FILES'
+    print('DATASET CONTAINS', len(wav_files), 'WAV_FILES')
 
     # List all xml-files
     xml_path = os.path.join(cfg.TRAINSET_PATH, 'xml')
     xml_files = [os.path.join(xml_path, f) for f in sorted(os.listdir(xml_path))]
-    print 'PARSING', len(xml_files), 'XML-FILES...'
+    print('PARSING', len(xml_files), 'XML-FILES...')
 
     # Open xml-files and extract metadata
     for i in range(len(xml_files)):
@@ -56,21 +56,21 @@ def parseDataset():
 
         # Status (parsing the files might take a while)
         if not i % 100:
-            print '\t', i, '/', len(xml_files)
+            print('\t', i, '/', len(xml_files))
                 
-    print '...DONE!', len(metadata), 'CLASSES IN DATASET'
+    print('...DONE!', len(metadata), 'CLASSES IN DATASET')
 
     return metadata
 
 ####################  CREATE SPLITS  #####################
 def sortDataset(mdata):
 
-    print 'PARSING CLASSES...'
+    print('PARSING CLASSES...')
 
     # Parse classes
     for c in mdata:
 
-        print '\t', c
+        print('\t', c)
 
         # Determine size of val split (10% but at least 1 file)
         val = max(1, len(mdata[c]) * 0.1)
@@ -107,7 +107,7 @@ def sortDataset(mdata):
             else:
                 copyfile(os.path.join(cfg.TRAINSET_PATH, 'wav', f['filename']), os.path.join(t_path, f['filename']))
 
-    print '...DONE!'
+    print('...DONE!')
 
 
 if __name__ == '__main__':

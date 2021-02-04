@@ -52,4 +52,4 @@ if __name__ == '__main__':
 
     for epoch in range(1, cfg.EPOCHS + 1):
 
-        print dynamicLearningRate('cosine', epoch)
+        print(dynamicLearningRate('cosine', epoch))
