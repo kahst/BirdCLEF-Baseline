@@ -179,7 +179,7 @@ We support model distillation which allows to compress ('distill') large models 
 
 ### Submission
 
-You can use our code to build a valid BirdCLEF sumbission for bith tasks - monophone and soundscape. Use the script `submission_monophone.py` and `submission_soundscape.py` after training. You need to specify one or more `TEST_MODELS` and you have to adjust the `TESTSET_PATH` and change it to the individual monophonic and soundscape test paths.
+You can use our code to build a valid BirdCLEF sumbission for both tasks - monophone and soundscape. Use the script `submission_monophone.py` and `submission_soundscape.py` after training. You need to specify one or more `TEST_MODELS` and you have to adjust the `TESTSET_PATH` and change it to the individual monophonic and soundscape test paths.
 
 <i><b>Note:</b> You will need to download the test data available from <b>crowdai.org</b>, first.</i>
 
